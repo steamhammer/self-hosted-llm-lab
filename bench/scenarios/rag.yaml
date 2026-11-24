@@ -1,0 +1,8 @@
+name: rag
+description: Retrieval-augmented answer, prefill-heavy (methodology §3.1)
+kind: synthetic
+inputTokens: 4000
+outputTokens: 300
+ignoreEos: true
+temperature: 0
+slo: { ttftP95Ms: 2000, tpotP95Ms: 50, maxErrorRate: 0.005 }

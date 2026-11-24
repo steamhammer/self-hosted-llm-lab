@@ -1,0 +1,20 @@
+# Dry run against the mock upstream in simulation mode (no GPU):
+#   MOCK_SIM=1 pnpm dev:mock
+#   node loadgen/src/cli.ts matrix --plan bench/plans/local-mock.yaml
+name: local-mock
+model: mock-model
+target: http://127.0.0.1:8000
+metricsUrl: http://127.0.0.1:8000/metrics
+scenarios: [chat, rag]
+ladder:
+  concurrency: [1, 2, 4, 8, 16, 32, 64]
+  stopAfterViolations: 2
+openLoop:
+  fractions: [0.5, 0.9]
+point:
+  warmupSeconds: 2
+  warmupRequests: 5
+  maxRequests: 80
+  maxSeconds: 10
+  minRequests: 10
+seed: 1

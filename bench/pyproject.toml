@@ -1,17 +1,19 @@
 [project]
 name = "bench"
 version = "0.1.0"
-description = "Load-test scenarios, run matrix and result analysis"
+description = "Benchmark analysis: tables, capacity under SLO, cost per 1M tokens, charts"
 requires-python = ">=3.12"
 dependencies = [
-  "guidellm",
-  "pandas",
-  "matplotlib",
-  "pyyaml",
+  "pandas>=2.2",
+  "matplotlib>=3.9",
+  "pyyaml>=6",
 ]
 
 [dependency-groups]
-dev = ["ruff"]
+dev = ["ruff", "pytest"]
 
 [tool.uv]
 package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

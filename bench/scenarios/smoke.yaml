@@ -1,0 +1,8 @@
+name: smoke
+description: Short requests for local hardware (laptop llama.cpp); not part of the GPU campaign
+kind: synthetic
+inputTokens: 128
+outputTokens: 64
+ignoreEos: true
+temperature: 0
+slo: { ttftP95Ms: 2000, tpotP95Ms: 100, maxErrorRate: 0.005 }

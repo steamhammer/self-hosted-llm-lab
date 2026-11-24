@@ -1,0 +1,8 @@
+name: chat
+description: Chat assistant turn (methodology §3.1)
+kind: synthetic
+inputTokens: 512
+outputTokens: 256
+ignoreEos: true
+temperature: 0
+slo: { ttftP95Ms: 1000, tpotP95Ms: 50, maxErrorRate: 0.005 }

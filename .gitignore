@@ -29,10 +29,12 @@ hf_cache/
 
 # Benchmark scratch output (curated raw results under results/raw ARE tracked)
 results/tmp/
+results/local/
 *.log
 
-# ASR datasets (downloaded, not redistributed)
+# Datasets (downloaded where used, not redistributed)
 asr/data/
+bench/data/
 
 # OS / editors
 .DS_Store

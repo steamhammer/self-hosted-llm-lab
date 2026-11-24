@@ -1,6 +1,6 @@
 # Benchmark methodology
 
-**Version:** 1.0 (frozen) · **Status:** to be frozen before the first paid GPU run.
+**Version:** 1.1 (frozen) · **Status:** frozen 2026-11-24, before the first paid GPU run.
 Every result in this repository is tagged with the methodology version it was measured under.
 Changes after the freeze go to the [changelog](#changelog) with a date and a reason.
 
@@ -29,7 +29,7 @@ Recorded for every run in `results/raw/<run>/env.json` by `bench/collect_env.sh`
 | Model ID, revision (commit SHA), quantization, KV-cache dtype | `Qwen/Qwen3.5-9B@<sha>`, BF16, auto |
 | Full vLLM config | copy of `serving/configs/<file>.yaml` |
 | Host CPU, RAM | `lscpu`, `free -g` |
-| Methodology version | 1.0 |
+| Methodology version | 1.1 |
 
 The vLLM version is pinned once for the whole campaign. A version change invalidates comparisons and
 requires re-running the baseline (4090 · Qwen3.5-9B · chat profile).
@@ -48,7 +48,9 @@ never estimated from characters.
 | `rag` | 4000 | 300 | retrieval-augmented answer, prefill-heavy |
 | `longgen` | 200 | 1000 | long generation, decode-heavy |
 
-- Prompts are random token sequences of exactly the target length (model tokenizer).
+- Prompts are random sequences of common English words. Their length comes from a tokens-per-word
+  ratio measured once per run with the server's own tokenizer (`POST /tokenize`); the actual prompt
+  size of every request is taken from `usage.prompt_tokens`, not assumed.
 - Output length is fixed with `max_tokens` = target and `ignore_eos = true`.
 - Every prompt is unique (seeded RNG, seed recorded); **no shared prefix**, so prefix caching
   cannot inflate results. Prefix caching is studied separately (§3.3).
@@ -75,30 +77,38 @@ meaningless on random-token prompts.
 
 ## 4. Load generation
 
-Tools: [GuideLLM](https://github.com/vllm-project/guidellm) and [`vllm bench serve`](https://docs.vllm.ai/en/stable/benchmarking/cli/).
+Primary tool: [`loadgen/`](../loadgen/) — this repository's own load generator
+([ADR-0005](adr/0005-load-generator.md)). It records every request (TTFT, every inter-token gap, E2E,
+usage), so all statistics are computed by [`bench/analyze`](../bench/analyze/) from raw data, and it
+behaves identically against vLLM, the gateway, the mock upstream and llama.cpp.
+Cross-check: one point per GPU is repeated with [`vllm bench serve`](https://docs.vllm.ai/en/stable/benchmarking/cli/)
+(`bench/crosscheck.sh`); loadgen and vLLM's numbers must agree within 10%, otherwise the run is investigated.
 The load generator runs **on the same machine** as the server (localhost), so network latency is excluded;
 gateway measurements in §7 add only the gateway hop.
 
 ### 4.1 Load patterns
 
-1. **Closed loop (concurrency ladder)** — `vllm bench serve` with a fixed number of in-flight requests:
-   1, 2, 4, 8, 16, 32, 64, 128. Stop climbing after two consecutive points violate the SLO or the
-   error rate exceeds 1%.
-2. **Open loop (rate sweep)** — GuideLLM `sweep`: measures synchronous and max-throughput rates, then
-   Poisson arrivals at rates in between. Open loop is what exposes queueing and tail latency; closed
-   loop alone understates p99 because clients wait for each other.
+1. **Closed loop (concurrency ladder)** — a fixed number of in-flight requests:
+   1, 2, 4, 8, 16, 32, 64, 128. Stop climbing after two consecutive points violate the SLO (§5.1,
+   error rate included).
+2. **Open loop (rate sweep)** — Poisson arrivals at 25%, 50%, 75% and 90% of the highest request rate
+   the ladder reached. Open loop is what exposes queueing and tail latency; closed loop alone
+   understates p99 because clients wait for each other.
 
 ### 4.2 Duration per load point
 
-- Warm-up: 30 s (or 20 requests), discarded.
+- Warm-up: 30 s or 20 completed requests, whichever comes first; requests *started* during the
+  warm-up are discarded (open loop: arrivals in the first 30 s).
 - Measurement: until 300 completed requests or 90 s, whichever comes first; at least 30 requests.
 - p99 is reported only when n ≥ 300; otherwise shown as `n/a (n=…)`.
 - The server is restarted between profiles to reset caches; within a ladder, the seed changes per point.
 
 ### 4.3 Client sanity
 
-If load-generator CPU usage exceeds 80% during a point, the point is invalid (the client, not the GPU,
-was the bottleneck) and is re-run with a lighter client configuration.
+If the load generator's event loop is busy more than 80% of a point's wall time
+(`performance.eventLoopUtilization()`; loadgen runs on one Node.js thread, so this is its CPU
+saturation), the point is invalid — the client, not the GPU, was the bottleneck. Invalid points are
+marked in the report, excluded from capacity, and re-run with fewer concurrent streams per client.
 
 ## 5. Metrics
 
@@ -116,11 +126,11 @@ Aggregated per load point:
 | Metric | Definition |
 |---|---|
 | Percentiles | p50, p90, p95, p99 of TTFT, TPOT, E2E |
-| Output throughput | Σ output tokens / wall time (tokens/s) |
-| Total throughput | Σ (input + output) tokens / wall time |
-| Request throughput | completed requests / s |
+| Output throughput | output tokens emitted inside the **steady-state window** / window length (tokens/s). Window = end of warm-up → start of the last measured request, i.e. while the load was fully applied; token times are rebuilt from start + TTFT + inter-token gaps, so ramp-down does not dilute the rate |
+| Total throughput | output throughput + prompt tokens of requests whose prefill finished inside the window |
+| Request throughput | requests completed inside the window / window length |
 | Error rate | failed or timed-out requests / all requests |
-| **Goodput** | requests/s that individually met the SLO |
+| **Goodput** | request throughput × share of requests that individually met the TTFT and TPOT targets |
 
 Server-side, scraped from vLLM `/metrics` at the start and end of every point: KV-cache usage,
 running/waiting requests, preemptions. Exact metric names are taken from the pinned vLLM version.
@@ -178,17 +188,27 @@ Measured at concurrency 1 and 32. Reported: Δ TTFT p50/p99 and Δ output throug
 
 ## 10. Raw data layout
 
+One directory per campaign (`bench/run_matrix.sh`), one sub-directory per load point:
+
 ```
-results/raw/<YYYY-MM-DD>_<gpu>_<model>_<quant>_<profile>_<pattern>/
-  env.json          # §2
-  vllm-config.yaml  # copy of the config used
-  metrics-*.prom    # /metrics snapshots
-  guidellm.json | vllm-bench.json
-  nvidia-smi.csv    # clocks, power, memory sampled every 1 s
+results/raw/<YYYY-MM-DD>_<gpu>_<model>_<quant>[_<path>]_<HHMMSS>/
+  run.json            # label, target, model, loadgen version, prompt calibration, start/finish
+  env.json            # §2 (bench/collect_env.py)
+  plan.yaml           # the resolved plan
+  scenarios/*.yaml    # the scenarios as used
+  vllm-config.yaml    # copy of the config used
+  nvidia-smi.csv      # clocks, power, temperature, memory, every 1 s
+  points/<scenario>/c<N> | r<rate>/
+    point.json        # pattern, value, seed, warm-up end, client ELU, quick summary
+    requests.jsonl.gz # one record per request: start, ttft, itl[], e2e, usage, status, error
+    metrics-before.prom, metrics-after.prom   # server /metrics snapshots
+  analysis/           # bench/analyze: summary.csv, capacity.csv, report.md, charts
+  crosscheck/         # vllm bench serve results (bench/crosscheck.sh)
 ```
 
 ## Changelog
 
 | Date | Version | Change | Reason |
 |---|---|---|---|
-| 2026-11-24 | 1.0-draft | Initial version | — |
+| 2026-11-24 | 1.0 | Initial version, frozen | — |
+| 2026-11-24 | 1.1 | Own load generator (loadgen) instead of GuideLLM as the primary tool, `vllm bench serve` as cross-check (§4); open-loop rates as fractions of the ladder's best rate (§4.1); client check via event-loop utilization (§4.3); steady-state throughput window (§5); word-based prompts calibrated with `/tokenize` (§3.1); raw layout (§10) | Same tool and output format against vLLM, gateway, mock and llama.cpp; per-request raw data for our own percentiles and goodput; no dependency on third-party output formats. Changed before any paid run, so no results are affected. |

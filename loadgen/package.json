@@ -1,0 +1,23 @@
+{
+  "name": "loadgen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Load generator for OpenAI-compatible LLM servers: per-request TTFT/ITL/E2E, closed and open loop, SLO-aware matrix",
+  "type": "module",
+  "bin": {
+    "loadgen": "./src/cli.ts"
+  },
+  "scripts": {
+    "lint": "biome check .",
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "undici": "^8.13.1",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "mock-upstream": "workspace:*"
+  }
+}

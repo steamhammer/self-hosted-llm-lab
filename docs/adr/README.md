@@ -9,6 +9,7 @@ A superseded ADR is not deleted: its status changes to `Superseded by NNNN`.
 | [0002](0002-model-family-qwen3-5.md) | Model family: Qwen3.5 (9B, 27B) | Accepted |
 | [0003](0003-gpu-matrix-and-providers.md) | GPU matrix and providers | Accepted |
 | [0004](0004-api-gateway.md) | API gateway: custom TypeScript service | Accepted |
+| [0005](0005-load-generator.md) | Load generator: own TypeScript tool, vLLM's benchmark as cross-check | Accepted |
 
 ## Template
 

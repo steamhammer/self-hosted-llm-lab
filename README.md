@@ -26,7 +26,8 @@ _Will appear here after the first measurement run._ Raw data: [`results/raw/`](r
 | `serving/configs/` | vLLM configs per model × GPU |
 | [`gateway/`](gateway/) | TypeScript API gateway (streaming, timeouts, retries, admission control) |
 | `mock-upstream/` | Fake vLLM for deterministic gateway tests |
-| `bench/` | Load scenarios, run matrix, analysis |
+| [`loadgen/`](loadgen/) | Load generator: per-request TTFT/ITL/E2E, closed and open loop, SLO-aware ladder |
+| [`bench/`](bench/) | Scenarios, plans, campaign runner, environment capture, analysis and charts |
 | `results/raw/` | Raw benchmark output + environment fingerprint per run |
 | `infra/` | Pod bootstrap and provider scripts (RunPod, Vast.ai) |
 | `observability/` | Prometheus / Grafana config |
@@ -42,9 +43,13 @@ cp .env.example .env   # fill in; never committed
 make setup
 make help
 
-pnpm test              # gateway + mock tests
+pnpm test              # gateway, mock and loadgen tests
+uv run --package bench pytest bench/tests   # analysis tests
 pnpm dev:mock          # fake vLLM on :8000
 UPSTREAM_URL=http://127.0.0.1:8000 FORWARD_HEADERS='x-mock-*' pnpm dev:gateway
+
+pnpm dev:mock:sim      # fake vLLM that behaves like a small GPU
+bench/run_matrix.sh --plan bench/plans/local-mock.yaml --label sim-direct   # dry-run campaign
 ```
 
 ## License

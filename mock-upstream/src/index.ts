@@ -17,6 +17,13 @@
  *   x-mock-role-first             send the role-only chunk right away, before the TTFT delay
  *                                 (some engines do this; it must not count as the first token)
  *
+ * Simulation mode (opts.sim, or MOCK_SIM=1 for the standalone server): requests without
+ * x-mock-ttft-ms / x-mock-itl-ms behave like a small GPU — a fixed number of slots with a FIFO
+ * queue (exposed as vllm:num_requests_waiting), prefill time proportional to prompt length and
+ * decode steps that slow down as more requests run. Good enough to exercise load tests locally.
+ *
+ * Tokens are whitespace-separated words: POST /tokenize counts them the same way usage does.
+ *
  * Control endpoints:
  *   GET  /_mock/stats   counters + last request seen
  *   POST /_mock/state   { "waiting": n } → value of vllm:num_requests_waiting
@@ -34,6 +41,24 @@ export interface MockStats {
   lastBody: unknown;
   lastHeaders: Record<string, string | string[] | undefined>;
 }
+
+export interface SimOptions {
+  /** Concurrent generations; further requests wait in a FIFO queue. */
+  slots: number;
+  /** Decode step time with a single running request. */
+  itlMs: number;
+  /** Prefill cost per prompt token, in microseconds. */
+  prefillUsPerToken: number;
+  /** Relative decode slowdown per additional running request (0.03 = +3% each). */
+  slowdownPerRunning: number;
+}
+
+export const DEFAULT_SIM: SimOptions = {
+  slots: 16,
+  itlMs: 8,
+  prefillUsPerToken: 100,
+  slowdownPerRunning: 0.03,
+};
 
 export interface MockUpstream {
   app: FastifyInstance;
@@ -79,14 +104,72 @@ function errorPayload(status: number, message: string) {
   };
 }
 
+function countWords(text: string): number {
+  const t = text.trim();
+  return t ? t.split(/\s+/).length : 0;
+}
+
 function promptTokens(body: ChatBody): number {
-  return Math.max(1, Math.ceil(JSON.stringify(body.messages ?? []).length / 4));
+  let n = 0;
+  for (const m of body.messages ?? []) {
+    const content = (m as { content?: unknown }).content;
+    if (typeof content === "string") n += countWords(content);
+  }
+  return Math.max(1, n);
+}
+
+/** FIFO semaphore modelling the engine's batch slots. */
+class Slots {
+  private running = 0;
+  private readonly queue: (() => void)[] = [];
+  private readonly size: number;
+  constructor(size: number) {
+    this.size = size;
+  }
+  get active(): number {
+    return this.running;
+  }
+  get waiting(): number {
+    return this.queue.length;
+  }
+  async acquire(signal: AbortSignal): Promise<() => void> {
+    if (this.running < this.size) {
+      this.running++;
+    } else {
+      await new Promise<void>((resolve, reject) => {
+        const grant = () => {
+          signal.removeEventListener("abort", onAbort);
+          resolve();
+        };
+        const onAbort = () => {
+          const i = this.queue.indexOf(grant);
+          if (i !== -1) this.queue.splice(i, 1);
+          reject(signal.reason);
+        };
+        this.queue.push(grant);
+        signal.addEventListener("abort", onAbort, { once: true });
+      });
+    }
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      const next = this.queue.shift();
+      if (next)
+        next(); // hand the slot over directly
+      else this.running--;
+    };
+  }
 }
 
 export async function createMockUpstream(
-  opts: { port?: number; host?: string } = {},
+  opts: { port?: number; host?: string; sim?: Partial<SimOptions> | boolean } = {},
 ): Promise<MockUpstream> {
   const app = Fastify({ logger: false });
+  const sim: SimOptions | null = opts.sim
+    ? { ...DEFAULT_SIM, ...(typeof opts.sim === "object" ? opts.sim : {}) }
+    : null;
+  const slots = sim ? new Slots(sim.slots) : null;
   const stats: MockStats = {
     requests: 0,
     active: 0,
@@ -124,9 +207,19 @@ export async function createMockUpstream(
       "# TYPE vllm:num_requests_running gauge",
       `vllm:num_requests_running{model_name="mock-model"} ${stats.active}.0`,
       "# TYPE vllm:num_requests_waiting gauge",
-      `vllm:num_requests_waiting{model_name="mock-model"} ${waiting}.0`,
+      `vllm:num_requests_waiting{model_name="mock-model"} ${waiting + (slots?.waiting ?? 0)}.0`,
       "",
     ].join("\n");
+  });
+
+  // vLLM: {"tokens":[...],"count":n}; llama.cpp: {"tokens":[...]}
+  app.post("/tokenize", async (req) => {
+    const body = (req.body ?? {}) as { prompt?: string; content?: string; messages?: unknown[] };
+    const n =
+      typeof body.prompt === "string" || typeof body.content === "string"
+        ? countWords(body.prompt ?? body.content ?? "")
+        : promptTokens({ messages: body.messages ?? [] });
+    return { tokens: Array.from({ length: n }, (_, i) => i), count: n, max_model_len: 32768 };
   });
 
   app.get("/_mock/stats", async () => stats);
@@ -176,6 +269,11 @@ export async function createMockUpstream(
     }
 
     // --- generation ----------------------------------------------------------------------
+    const simulate =
+      slots !== null &&
+      sim !== null &&
+      req.headers["x-mock-ttft-ms"] === undefined &&
+      req.headers["x-mock-itl-ms"] === undefined;
     const ttft = intHeader(req, "x-mock-ttft-ms") ?? 20;
     const itl = intHeader(req, "x-mock-itl-ms") ?? 5;
     const nTokens = intHeader(req, "x-mock-tokens") ?? body.max_tokens ?? 16;
@@ -192,9 +290,11 @@ export async function createMockUpstream(
 
     const ac = new AbortController();
     let finished = false;
+    let releaseSlot: (() => void) | undefined;
     stats.active++;
     reply.raw.on("close", () => {
       stats.active--;
+      releaseSlot?.();
       if (finished) stats.completed++;
       else {
         stats.aborted++;
@@ -202,9 +302,26 @@ export async function createMockUpstream(
       }
     });
 
+    /** Time before the first token: queueing for a slot + prefill. */
+    const waitFirstToken = async () => {
+      if (!simulate) return sleep(ttft, undefined, { signal: ac.signal });
+      releaseSlot = await (slots as Slots).acquire(ac.signal);
+      await sleep((usage.prompt_tokens * (sim as SimOptions).prefillUsPerToken) / 1000, undefined, {
+        signal: ac.signal,
+      });
+    };
+    /** One decode step; slower when more requests share the batch. */
+    const stepMs = () =>
+      simulate
+        ? (sim as SimOptions).itlMs *
+          (1 + (sim as SimOptions).slowdownPerRunning * ((slots as Slots).active - 1))
+        : itl;
+
     try {
       if (!body.stream) {
-        await sleep(ttft + nTokens * itl, undefined, { signal: ac.signal });
+        await waitFirstToken();
+        for (let i = 1; i < nTokens; i++) await sleep(stepMs(), undefined, { signal: ac.signal });
+        releaseSlot?.();
         finished = true;
         const text = Array.from({ length: nTokens }, (_, i) => `tok${i}`).join(" ");
         return reply.send({
@@ -232,10 +349,10 @@ export async function createMockUpstream(
 
       const roleFirst = header(req, "x-mock-role-first") !== undefined;
       if (roleFirst) res.write(chunk({ role: "assistant", content: null }));
-      await sleep(ttft, undefined, { signal: ac.signal });
+      await waitFirstToken();
       if (!roleFirst) res.write(chunk({ role: "assistant", content: "" }));
       for (let i = 0; i < nTokens; i++) {
-        if (i > 0) await sleep(itl, undefined, { signal: ac.signal });
+        if (i > 0) await sleep(stepMs(), undefined, { signal: ac.signal });
         if (dropAfter !== undefined && i === dropAfter) {
           res.destroy();
           return;
@@ -248,6 +365,7 @@ export async function createMockUpstream(
         }
         res.write(chunk({ content: `tok${i} ` }));
       }
+      releaseSlot?.();
       res.write(chunk({}, "length"));
       if (body.stream_options?.include_usage) {
         res.write(

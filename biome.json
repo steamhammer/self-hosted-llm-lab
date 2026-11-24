@@ -1,7 +1,14 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.8/schema.json",
   "files": {
-    "includes": ["gateway/**", "mock-upstream/**", "!**/dist", "!**/node_modules", "!**/*.md"]
+    "includes": [
+      "gateway/**",
+      "mock-upstream/**",
+      "loadgen/**",
+      "!**/dist",
+      "!**/node_modules",
+      "!**/*.md"
+    ]
   },
   "formatter": {
     "indentStyle": "space",

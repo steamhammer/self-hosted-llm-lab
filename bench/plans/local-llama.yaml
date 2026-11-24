@@ -1,0 +1,24 @@
+# Smoke run against llama.cpp's llama-server on the laptop, through the gateway:
+#   llama-new -m <model>.gguf --alias local -np 4
+#   UPSTREAM_URL=http://127.0.0.1:9931 UPSTREAM_METRICS_PATH= pnpm dev:gateway
+#   node loadgen/src/cli.ts matrix --plan bench/plans/local-llama.yaml
+name: local-llama
+model: local
+target: http://127.0.0.1:8080          # gateway
+tokenizeUrl: http://127.0.0.1:9931     # llama-server itself
+metricsUrl: http://127.0.0.1:8080/metrics
+scenarios: [smoke]
+ladder:
+  concurrency: [1, 2, 4, 8]
+  stopAfterViolations: 2
+openLoop:
+  fractions: [0.5]
+point:
+  warmupSeconds: 5
+  warmupRequests: 3
+  maxRequests: 30
+  maxSeconds: 30
+  minRequests: 8
+extraBody:
+  chat_template_kwargs: { enable_thinking: false }
+seed: 1

@@ -1,0 +1,11 @@
+name: rag-shared-prefix
+description: >-
+  Prefix-caching experiment (methodology §3.3): 3000 shared tokens (system prompt / documents)
+  + 1000 unique tokens per request. Compare with prefix caching on and off.
+kind: synthetic
+inputTokens: 4000
+sharedPrefixTokens: 3000
+outputTokens: 300
+ignoreEos: true
+temperature: 0
+slo: { ttftP95Ms: 2000, tpotP95Ms: 50, maxErrorRate: 0.005 }

@@ -1,0 +1,11 @@
+name: sharegpt
+description: >-
+  Realistic conversations (methodology §3.2). Natural EOS; max_tokens from the reference answer,
+  capped at outputTokens. Prepare the data with bench/prepare_sharegpt.py.
+kind: dataset
+dataset: bench/data/sharegpt.jsonl
+outputTokens: 1024
+ignoreEos: false
+temperature: 0.7
+topP: 0.8
+slo: { ttftP95Ms: 1000, tpotP95Ms: 50, maxErrorRate: 0.005 }

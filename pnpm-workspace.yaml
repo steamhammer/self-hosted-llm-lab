@@ -1,5 +1,6 @@
 packages:
   - gateway
   - mock-upstream
+  - loadgen
 allowBuilds:
   esbuild: true

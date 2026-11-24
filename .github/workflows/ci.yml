@@ -20,7 +20,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # GITLEAKS_LICENSE is required only for organizations, not personal accounts.
 
-  gateway:
+  node:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,8 +35,19 @@ jobs:
       - run: pnpm test
       - run: pnpm --filter gateway bundle
 
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-packages --locked
+      - run: uv run --package bench ruff check bench
+      - run: uv run --package bench ruff format --check bench
+      - run: uv run --package bench pytest bench/tests -q
+      - run: shellcheck bench/*.sh
+
   gateway-image:
-    needs: [secrets-scan, gateway]
+    needs: [secrets-scan, node]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -61,5 +72,3 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/llm-lab-gateway:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  # Phase 3 adds: bench lint (ruff) and analyze tests.
