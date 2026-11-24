@@ -1,0 +1,5 @@
+packages:
+  - gateway
+  - mock-upstream
+allowBuilds:
+  esbuild: true

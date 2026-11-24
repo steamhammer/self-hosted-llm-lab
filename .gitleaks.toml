@@ -1,0 +1,15 @@
+# Default gitleaks rules plus project-specific ones.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "runpod-api-key"
+description = "RunPod API key"
+regex = '''\brpa_[A-Za-z0-9]{20,}\b'''
+keywords = ["rpa_"]
+
+[[rules]]
+id = "env-assignment-nonempty-secret"
+description = "Non-empty secret assignment in an env-style file"
+regex = '''(?m)^(?:HF_TOKEN|RUNPOD_API_KEY|VAST_API_KEY|R2_ACCESS_KEY_ID|R2_SECRET_ACCESS_KEY)=\S+'''
+keywords = ["HF_TOKEN", "RUNPOD_API_KEY", "VAST_API_KEY", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"]

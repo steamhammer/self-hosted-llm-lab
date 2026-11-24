@@ -1,0 +1,19 @@
+{
+  "name": "mock-upstream",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fake vLLM OpenAI-compatible server with scriptable latency and failures",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "lint": "biome check .",
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "fastify": "^5.12.8"
+  }
+}

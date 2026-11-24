@@ -1,0 +1,41 @@
+# Secrets — never commit. Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.pnpm-debug.log*
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Model weights and caches (downloaded on the GPU pod, never stored here)
+models/
+hf_cache/
+*.safetensors
+*.gguf
+*.bin
+
+# Benchmark scratch output (curated raw results under results/raw ARE tracked)
+results/tmp/
+*.log
+
+# ASR datasets (downloaded, not redistributed)
+asr/data/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

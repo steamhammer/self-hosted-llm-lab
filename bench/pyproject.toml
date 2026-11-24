@@ -1,0 +1,17 @@
+[project]
+name = "bench"
+version = "0.1.0"
+description = "Load-test scenarios, run matrix and result analysis"
+requires-python = ">=3.12"
+dependencies = [
+  "guidellm",
+  "pandas",
+  "matplotlib",
+  "pyyaml",
+]
+
+[dependency-groups]
+dev = ["ruff"]
+
+[tool.uv]
+package = false

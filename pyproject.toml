@@ -1,0 +1,8 @@
+# uv workspace root (virtual: no package of its own).
+# Members get added as they appear: bench now, asr in phase 7.
+[tool.uv.workspace]
+members = ["bench"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

@@ -1,0 +1,26 @@
+{
+  "name": "self-hosted-llm-lab",
+  "private": true,
+  "description": "Self-hosted LLM inference lab: vLLM on rented GPUs, API gateway, load tests",
+  "license": "MIT",
+  "engines": {
+    "node": ">=26"
+  },
+  "scripts": {
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build",
+    "format": "biome format --write .",
+    "dev:mock": "pnpm --filter mock-upstream start",
+    "dev:gateway": "pnpm --filter gateway dev"
+  },
+  "packageManager": "pnpm@11.24.0",
+  "devDependencies": {
+    "@biomejs/biome": "2.6.8",
+    "@types/node": "^26.6.6",
+    "esbuild": "~0.28.2",
+    "typescript": "7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
