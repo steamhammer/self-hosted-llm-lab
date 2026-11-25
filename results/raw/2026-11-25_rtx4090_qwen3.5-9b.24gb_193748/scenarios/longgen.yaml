@@ -1,0 +1,12 @@
+name: longgen
+description: Long generation, decode-heavy (methodology §3.1)
+kind: synthetic
+inputTokens: 200
+outputTokens: 1000
+sharedPrefixTokens: 0
+ignoreEos: true
+temperature: 0
+slo:
+  ttftP95Ms: 1000
+  tpotP95Ms: 50
+  maxErrorRate: 0.005

@@ -1,0 +1,19 @@
+# Qwen3.5-9B in BF16 on a 24 GB card (RTX 4090 / L4 / A10-class): ADR-0003, first GPU campaign.
+# Weights take ~18 GB, which leaves a few GB for the KV cache; the hybrid (Gated DeltaNet) layers
+# keep the per-token cache small, but expect batch size, not compute, to cap throughput here.
+#
+#   vllm serve --config serving/configs/qwen3.5-9b.24gb.yaml --port 8000
+#
+# Flag reference: https://docs.vllm.ai/en/latest/configuration/serve_args.html
+# Model recipe:   https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3.5.html
+model: Qwen/Qwen3.5-9B
+language-model-only: true
+reasoning-parser: qwen3
+default-chat-template-kwargs: '{"enable_thinking": false}'
+max-model-len: 8192
+gpu-memory-utilization: 0.92
+max-num-seqs: 128
+seed: 0
+# Prefix caching for hybrid models is experimental in vLLM; the rag-shared-prefix scenario
+# compares it on and off by overriding this flag on the command line.
+# enable-prefix-caching: true
