@@ -4,6 +4,7 @@
 #   bench/run_matrix.sh --plan bench/plans/gpu.yaml --label 4090_qwen3.5-9b_bf16 [loadgen options]
 #
 # Environment (optional): PROVIDER, REGION, GPU_PRICE_PER_HOUR_USD, VLLM_IMAGE, VLLM_CONFIG,
+# SKIP_ANALYZE=1 (no report here, e.g. on the pod; analyse after infra/fetch.sh),
 # SERVER_URL (inference server for env.json; default: the plan's tokenizeUrl, else its target),
 # OUT (output directory; default results/raw/..., or results/local/... for plans named local-*).
 set -euo pipefail
@@ -45,7 +46,9 @@ fi
 
 node loadgen/src/cli.ts matrix --plan "$PLAN" --label "$LABEL" --out "$OUT" ${ARGS[@]+"${ARGS[@]}"}
 
-if command -v uv >/dev/null; then
+if [[ "${SKIP_ANALYZE:-0}" == 1 ]]; then
+  echo "analysis skipped: run it after fetching the results"
+elif command -v uv >/dev/null; then
   uv run --package bench python bench/analyze/analyze.py report "$OUT"
 else
   echo "uv not found: analyse later with 'uv run --package bench python bench/analyze/analyze.py report $OUT'"

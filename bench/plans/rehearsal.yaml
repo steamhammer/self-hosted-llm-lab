@@ -1,0 +1,26 @@
+# Rehearsal on a real GPU (phase 4): every stage of the pipeline once, in ~10 minutes.
+# Started by infra/jobs/rehearsal.sh inside the lab image; numbers are not part of the results.
+name: rehearsal
+model: Qwen/Qwen3.5-0.8B
+target: http://127.0.0.1:8000
+tokenizeUrl: http://127.0.0.1:8000
+metricsUrl: http://127.0.0.1:8000/metrics
+readyUrl: http://127.0.0.1:8000/health
+scenarios: [chat, rag]
+ladder:
+  concurrency: [1, 4, 16, 64]
+  stopAfterViolations: 2
+openLoop:
+  fractions: [0.5]
+point:
+  warmupSeconds: 5
+  warmupRequests: 5
+  maxRequests: 80
+  maxSeconds: 20
+  minRequests: 10
+  cooldownSeconds: 2
+extraBody:
+  chat_template_kwargs: { enable_thinking: false }
+hooks:
+  beforeScenario: infra/serve.sh restart   # exercised here so the GPU campaign can rely on it
+seed: 1

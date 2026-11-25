@@ -23,13 +23,13 @@ _Will appear here after the first measurement run._ Raw data: [`results/raw/`](r
 |---|---|
 | [`docs/methodology.md`](docs/methodology.md) | How everything is measured — fixed before the first paid run |
 | [`docs/adr/`](docs/adr/) | Architecture decision records |
-| `serving/configs/` | vLLM configs per model × GPU |
+| [`serving/configs/`](serving/configs/) | vLLM config files per model × GPU (`vllm serve --config`) |
 | [`gateway/`](gateway/) | TypeScript API gateway (streaming, timeouts, retries, admission control) |
 | `mock-upstream/` | Fake vLLM for deterministic gateway tests |
 | [`loadgen/`](loadgen/) | Load generator: per-request TTFT/ITL/E2E, closed and open loop, SLO-aware ladder |
 | [`bench/`](bench/) | Scenarios, plans, campaign runner, environment capture, analysis and charts |
 | `results/raw/` | Raw benchmark output + environment fingerprint per run |
-| `infra/` | Pod bootstrap and provider scripts (RunPod, Vast.ai) |
+| [`infra/`](infra/) | Lab image, pod bootstrap with self-deletion, RunPod / Vast.ai launchers, result fetch |
 | `observability/` | Prometheus / Grafana config |
 | `asr/` | Optional Whisper experiment |
 
@@ -51,6 +51,15 @@ UPSTREAM_URL=http://127.0.0.1:8000 FORWARD_HEADERS='x-mock-*' pnpm dev:gateway
 pnpm dev:mock:sim      # fake vLLM that behaves like a small GPU
 bench/run_matrix.sh --plan bench/plans/local-mock.yaml --label sim-direct   # dry-run campaign
 ```
+
+## Running on a rented GPU
+
+```bash
+infra/vast/up.sh --gpu RTX_3090 --max-price 0.30 --max-min 30   # rehearsal; the pod deletes itself
+infra/fetch.sh latest                                           # results from R2 → results/
+```
+
+Setup, measurement sessions and troubleshooting: [`infra/README.md`](infra/README.md).
 
 ## License
 

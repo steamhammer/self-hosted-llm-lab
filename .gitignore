@@ -30,6 +30,9 @@ hf_cache/
 # Benchmark scratch output (curated raw results under results/raw ARE tracked)
 results/tmp/
 results/local/
+# Session logs from the pods (session.json files are tracked)
+results/sessions/*/logs/
+results/sessions/*/results/
 *.log
 
 # Datasets (downloaded where used, not redistributed)

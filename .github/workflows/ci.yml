@@ -41,10 +41,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-packages --locked
-      - run: uv run --package bench ruff check bench
-      - run: uv run --package bench ruff format --check bench
+      - run: uv run --package bench ruff check bench infra
+      - run: uv run --package bench ruff format --check bench infra
       - run: uv run --package bench pytest bench/tests -q
-      - run: shellcheck bench/*.sh
+      - run: shellcheck -x bench/*.sh infra/*.sh infra/*/*.sh
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y rclone
+      # Pod lifecycle without a GPU: success, failures, watchdog, restart, KEEP_ALIVE.
+      - run: infra/tests/bootstrap.test.sh
 
   gateway-image:
     needs: [secrets-scan, node]

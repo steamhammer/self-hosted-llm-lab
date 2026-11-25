@@ -106,6 +106,9 @@ def methodology_version() -> str | None:
 
 
 def git() -> dict:
+    # Inside the lab image there is no .git: the image build records the commit in LAB_GIT_SHA.
+    if os.environ.get("LAB_GIT_SHA"):
+        return {"commit": os.environ["LAB_GIT_SHA"], "dirty": None, "source": "image"}
     sha = run(["git", "-C", str(REPO), "rev-parse", "HEAD"])
     dirty = run(["git", "-C", str(REPO), "status", "--porcelain"])
     return {"commit": sha, "dirty": bool(dirty) if dirty is not None else None}
@@ -132,6 +135,8 @@ def main() -> None:
         "server": server(args.server_url),
         "vllmImage": os.environ.get("VLLM_IMAGE") or None,
         "vllmConfig": os.environ.get("VLLM_CONFIG") or None,
+        "labImage": os.environ.get("LAB_IMAGE") or None,
+        "session": os.environ.get("LAB_SESSION") or None,
         "methodologyVersion": methodology_version(),
         "repo": git(),
     }

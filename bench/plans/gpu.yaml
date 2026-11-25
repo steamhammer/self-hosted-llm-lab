@@ -21,6 +21,6 @@ point:
   cooldownSeconds: 5
 extraBody:
   chat_template_kwargs: { enable_thinking: false }   # methodology §3.4
-hooks: {}
-  # beforeScenario: infra/restart-vllm.sh            # phase 4: fresh server per scenario
+hooks:
+  beforeScenario: infra/serve.sh restart   # fresh server per scenario: no warm cache carried over
 seed: 1
