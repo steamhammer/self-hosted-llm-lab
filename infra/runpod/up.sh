@@ -1,79 +1,150 @@
 #!/usr/bin/env bash
 # Creates a RunPod pod from the lab image; the pod runs one job and deletes itself.
 #
-#   infra/runpod/up.sh --gpu "NVIDIA GeForce RTX 3090" --price 0.22 [options]
+#   infra/runpod/up.sh --gpu "NVIDIA GeForce RTX 4090,NVIDIA RTX A5000" [options]
 #
-#   --gpu ID         GPU type id as `runpodctl` lists it (https://docs.runpod.io/references/gpu-types)
-#   --price USD      hourly price shown in the console; recorded in env.json and session.json
+#   --gpu LIST       GPU type ids, comma-separated, tried in order until one is free
+#                    (ids: https://docs.runpod.io/references/gpu-types, "GPU ID" column)
+#   --max-price USD  delete the pod at once if RunPod bills more per hour (default 1.00)
+#   --price USD      only if you want to record a price by hand; normally the price RunPod
+#                    reports on creation is recorded and infra/fetch.sh writes it into the results
 #   --job NAME       rehearsal (default) | gpu-session
 #   --configs LIST   for gpu-session: comma-separated serving/configs names
-#   --label TAG      default <gpu>_<job>
-#   --cloud TYPE     COMMUNITY (default, cheaper) | SECURE
-#   --disk GB        container disk, holds the model weights (default 40)
-#   --max-min N      hard runtime cap in minutes (default 60)
+#   --plan FILE      for gpu-session: plan to run (default bench/plans/gpu.yaml)
+#   --scenarios LIST override the plan's scenarios, e.g. chat,rag
+#   --label TAG      default <gpu>_<job> or <gpu>_<config>
+#   --cloud TYPE     SECURE (default: datacenter hosts, reliable image pulls) | COMMUNITY
+#   --disk GB        container disk for model weights and caches (default 40, gpu-session 80)
+#   --max-min N      hard runtime cap in minutes (default: the plan's worst-case estimate + 25%)
 #   --keep-alive     keep the pod after the job (still capped by --max-min)
-#   --dry-run        print the command with secrets redacted, create nothing
+#   --dry-run        print the estimate and the command with secrets redacted, create nothing
 #
-# Reads .env (R2_*, HF_TOKEN, LAB_IMAGE). Needs runpodctl configured with RUNPOD_API_KEY:
+# Reads .env (R2_*, HF_TOKEN, LAB_IMAGE). Needs runpodctl configured (runpodctl doctor):
 # https://docs.runpod.io/runpodctl/overview
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 . infra/lib.sh
 load_env_file .env
 
-GPU="" PRICE="" CLOUD=COMMUNITY DISK=40 DRY=0
-JOB=rehearsal LABEL="" MAX_RUNTIME_MIN="${MAX_RUNTIME_MIN:-60}" KEEP_ALIVE=0
+GPUS="" PRICE="" MAX_PRICE=1.00 CLOUD=SECURE DISK="" DRY=0 MAX_MIN="" USER_LABEL=""
+JOB=rehearsal KEEP_ALIVE=0
 while (($#)); do
   case "$1" in
-    --gpu) GPU="$2"; shift 2 ;;
+    --gpu) GPUS="$2"; shift 2 ;;
     --price) PRICE="$2"; shift 2 ;;
+    --max-price) MAX_PRICE="$2"; shift 2 ;;
     --job) JOB="$2"; shift 2 ;;
     --configs) CONFIGS="$2"; shift 2 ;;
-    --label) LABEL="$2"; shift 2 ;;
+    --plan) PLAN="$2"; shift 2 ;;
+    --scenarios) SCENARIOS="$2"; shift 2 ;;
+    --label) USER_LABEL="$2"; shift 2 ;;
     --cloud) CLOUD="$2"; shift 2 ;;
     --disk) DISK="$2"; shift 2 ;;
-    --max-min) MAX_RUNTIME_MIN="$2"; shift 2 ;;
+    --max-min) MAX_MIN="$2"; shift 2 ;;
     --keep-alive) KEEP_ALIVE=1; shift ;;
     --dry-run) DRY=1; shift ;;
-    -h | --help) sed -n '2,19p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,23p' "$0"; exit 0 ;;
     *) die "unknown option $1 (see --help)" ;;
   esac
 done
-[[ -n "$GPU" && -n "$PRICE" ]] || die "--gpu and --price are required (see --help)"
+[[ -n "$GPUS" ]] || die "--gpu is required (see --help)"
+[[ "$JOB" != gpu-session || -n "${CONFIGS:-}" ]] || die "--job gpu-session needs --configs"
+[[ -n "$DISK" ]] || if [[ "$JOB" == gpu-session ]]; then DISK=80; else DISK=40; fi
 
-TAG="$(printf '%s' "$GPU" | tr '[:upper:]-' '[:lower:] ' | sed -E 's/nvidia|geforce//g; s/[^a-z0-9]+//g')"
-LABEL="${LABEL:-${TAG}_${JOB}}"
-PROVIDER=runpod GPU_PRICE_PER_HOUR_USD="$PRICE"
-export JOB LABEL MAX_RUNTIME_MIN KEEP_ALIVE PROVIDER GPU_PRICE_PER_HOUR_USD CONFIGS="${CONFIGS:-}"
-launch_checks
-
-CMD=(runpodctl pod create
-  --name "lab-$LABEL"
-  --image "$LAB_IMAGE"
-  --gpu-id "$GPU" --gpu-count 1
-  --cloud-type "$CLOUD"
-  --container-disk-in-gb "$DISK" --volume-in-gb 0
-  --min-cuda-version 12.9
-  --ports "8000/http,8080/http"
-  --env "$(pod_env_json)")
-
-log "pod lab-$LABEL: $GPU ($CLOUD) at \$$PRICE/h, job $JOB, cap ${MAX_RUNTIME_MIN}m → max ≈ \$$(python3 -c "print(round($PRICE*$MAX_RUNTIME_MIN/60, 2))")"
-if ((DRY)); then
-  print_cmd "${CMD[@]}"
-  exit 0
+# The cap comes from the plan unless given: a cap below the plan's length would cut the run.
+EST="$(plan_estimate "$JOB" "${PLAN:-}" "${CONFIGS:-}" "${SCENARIOS:-}")"
+if [[ -n "$MAX_MIN" ]]; then
+  MAX_RUNTIME_MIN="$MAX_MIN"
+  ((MAX_MIN >= EST)) || log "WARNING: --max-min $MAX_MIN is below the worst-case estimate of ${EST}m"
+else
+  MAX_RUNTIME_MIN=$((EST * 5 / 4 + 10))
 fi
-# runpodctl echoes the whole pod spec, environment included: never print it as is.
-OUT="$("${CMD[@]}" 2>&1)" || die "pod not created: $(printf '%s' "$OUT" | redact)"
-ID="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+
+PROVIDER=runpod
+unset GPU_PRICE_PER_HOUR_USD
+[[ -z "$PRICE" ]] || GPU_PRICE_PER_HOUR_USD="$PRICE"
+export JOB MAX_RUNTIME_MIN KEEP_ALIVE PROVIDER CONFIGS="${CONFIGS:-}" PLAN="${PLAN:-}" SCENARIOS="${SCENARIOS:-}"
+[[ -z "${GPU_PRICE_PER_HOUR_USD:-}" ]] || export GPU_PRICE_PER_HOUR_USD
+
+log "job $JOB, worst case ≈ ${EST}m of work, cap ${MAX_RUNTIME_MIN}m (+ image pull, billed too)," \
+  "max ≈ \$$(python3 -c "print(round($MAX_PRICE * ($MAX_RUNTIME_MIN + 15) / 60, 2))") at \$$MAX_PRICE/h"
+
+IFS=',' read -r -a GPU_LIST <<<"$GPUS"
+errors=()
+for raw in "${GPU_LIST[@]}"; do
+  GPU="$(printf '%s' "$raw" | sed -E 's/^ +| +$//g')"
+  [[ -n "$GPU" ]] || continue
+  TAG="$(printf '%s' "$GPU" | tr '[:upper:]-' '[:lower:] ' | sed -E 's/nvidia|geforce|generation//g; s/[^a-z0-9]+//g')"
+  if [[ -n "$USER_LABEL" ]]; then
+    LABEL="$USER_LABEL"
+  elif [[ "$JOB" == gpu-session && "${CONFIGS:-}" != *,* ]]; then
+    LABEL="${TAG}_${CONFIGS}"
+  else
+    LABEL="${TAG}_${JOB}"
+  fi
+  export LABEL
+  launch_checks
+
+  CMD=(runpodctl pod create
+    --name "lab-$LABEL"
+    --image "$LAB_IMAGE"
+    --gpu-id "$GPU" --gpu-count 1
+    --cloud-type "$CLOUD"
+    --container-disk-in-gb "$DISK" --volume-in-gb 0
+    --min-cuda-version 12.9
+    --ports "8000/http,8080/http"
+    --env "$(pod_env_json)")
+
+  if ((DRY)); then
+    log "would try: $GPU ($CLOUD) as lab-$LABEL"
+    print_cmd "${CMD[@]}"
+    continue
+  fi
+
+  log "trying $GPU ($CLOUD)"
+  # runpodctl echoes the whole pod spec, environment included: never print it as is.
+  if ! OUT="$("${CMD[@]}" 2>&1)"; then
+    msg="$(printf '%s' "$OUT" | redact | tr '\n' ' ' | head -c 300)"
+    log "  not created: $msg"
+    errors+=("$GPU: $msg")
+    continue
+  fi
+  read -r ID COST < <(printf '%s' "$OUT" | python3 -c 'import json,sys
 try:
-    print(json.load(sys.stdin).get("id") or "")
+    d = json.load(sys.stdin)
 except ValueError:
-    pass' 2>/dev/null)"
-[[ -n "$ID" ]] || die "unexpected runpodctl answer: $(printf '%s' "$OUT" | redact | head -c 400)"
-log "pod $ID created; it deletes itself when the job ends or after ${MAX_RUNTIME_MIN}m"
-cat <<EOF
+    d = {}
+print(d.get("id") or "-", d.get("costPerHr") or "-")') || true
+  [[ "${ID:-}" != "-" && -n "${ID:-}" ]] || die "unexpected runpodctl answer: $(printf '%s' "$OUT" | redact | head -c 400)"
+
+  if [[ "$COST" != "-" ]] && python3 -c "import sys; sys.exit(0 if $COST > $MAX_PRICE else 1)"; then
+    log "  pod $ID bills \$$COST/h, above --max-price \$$MAX_PRICE: deleting it"
+    runpodctl pod delete "$ID" >/dev/null 2>&1 || log "  ERROR: delete $ID by hand: runpodctl pod delete $ID"
+    errors+=("$GPU: \$$COST/h above the limit")
+    continue
+  fi
+
+  # The pod's id is its session's machineId: fetch.sh takes the real price from this record.
+  mkdir -p results
+  python3 - "$ID" "$GPU" "$CLOUD" "$COST" "$LABEL" "$JOB" "${CONFIGS:-}" "$MAX_RUNTIME_MIN" >>results/launches.jsonl <<'PY'
+import json, sys, datetime
+pod, gpu, cloud, cost, label, job, configs, cap = sys.argv[1:9]
+print(json.dumps({"provider": "runpod", "machineId": pod, "gpu": gpu, "cloud": cloud,
+                  "pricePerHourUsd": None if cost == "-" else float(cost), "label": label, "job": job,
+                  "configs": configs or None, "maxRuntimeMin": int(cap),
+                  "createdAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}))
+PY
+  log "pod $ID created: $GPU at \$$COST/h; it deletes itself when the job ends or after ${MAX_RUNTIME_MIN}m"
+  cat <<EOF
 
 Watch:   runpodctl pod list      (logs: https://www.runpod.io/console/pods → $ID → Logs)
-Results: infra/fetch.sh          (session folder appears in R2 within a minute)
+Results: infra/fetch.sh          (session folder appears in R2 once the image is pulled)
 Abort:   runpodctl pod delete $ID
 EOF
+  exit 0
+done
+
+((DRY)) && exit 0
+log "no pod created:"
+for e in "${errors[@]}"; do log "  $e"; done
+exit 1

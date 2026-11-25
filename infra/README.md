@@ -32,7 +32,7 @@ infra/fetch.sh ◀────── R2 ◀────────────�
 | `serve.sh` | Start / stop / restart vLLM and wait for `/health`; the plans' `beforeScenario` hook |
 | `gateway.sh` | Gateway next to vLLM with admission limits and TTFT timeout pushed out of the way |
 | `terminate.py` | Deletes the current RunPod pod or Vast.ai instance via the provider API |
-| `runpod/up.sh`, `vast/up.sh` | Launchers: build the pod environment from `.env`, print the worst-case cost |
+| `runpod/up.sh`, `vast/up.sh` | Launchers: build the pod environment from `.env`, print the worst-case cost; RunPod tries a list of GPUs and records the billed price |
 | `fetch.sh` | Lists and downloads sessions from R2, files the runs, runs the analysis |
 | `vast/status.sh` | Instance state and the host's image pull progress (`--watch` to follow) |
 | `image_info.py` | Compressed size of the lab image and whether it is public |
@@ -96,13 +96,21 @@ gone.
 ## Measurement session
 
 ```bash
-infra/runpod/up.sh --gpu "NVIDIA GeForce RTX 4090" --price 0.34 \
-  --job gpu-session --configs qwen3.5-9b.24gb --max-min 90
+infra/runpod/up.sh --gpu "NVIDIA GeForce RTX 4090,NVIDIA RTX A5000,NVIDIA GeForce RTX 3090" \
+  --job gpu-session --configs qwen3.5-9b.24gb --max-price 0.80 --dry-run
 ```
 
-`--configs` takes several comma-separated names from `serving/configs/`; a failed config does not
-stop the next one. Budget the cap as: pull + download (5–15 min) + ~1 min model load per scenario
-+ the plan itself.
+- `--gpu` takes a list: Secure Cloud cards often go within minutes, so the launcher tries each
+  in order and takes the first one RunPod can create.
+- The real hourly price comes from RunPod's answer at creation. Above `--max-price` the pod is
+  deleted at once and the next GPU is tried. The price goes to `results/launches.jsonl`, and
+  `infra/fetch.sh` writes it into `session.json` and every run's `env.json`, so $/1M tokens is
+  computed from what was actually billed.
+- Without `--max-min` the cap is the plan's worst-case length + 25%: every point running to
+  `maxSeconds`, a vLLM restart per scenario, the gateway pass and the cross-check. The dry run
+  prints that estimate (about 112 minutes for `gpu.yaml` with one config).
+- `--configs` takes several comma-separated names from `serving/configs/`; a failed config does
+  not stop the next one.
 
 ## When something goes wrong
 

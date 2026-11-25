@@ -191,3 +191,33 @@ launch_checks() {
   [[ "$LABEL" =~ ^[A-Za-z0-9._-]+$ ]] || die "LABEL may contain only letters, digits, '.', '_' and '-'"
   [[ "$JOB" != gpu-session || -n "${CONFIGS:-}" ]] || die "JOB=gpu-session needs CONFIGS"
 }
+
+# plan_estimate JOB [PLAN] [CONFIGS] [SCENARIOS] → worst-case minutes of work inside the pod
+# (every ladder and open-loop point running to maxSeconds, a vLLM restart per scenario, the
+# gateway pass and the cross-check). Image pull time is not included.
+plan_estimate() {
+  python3 - "$@" <<'PY'
+import math, re, sys
+args = sys.argv[1:] + [""] * 4
+job, plan, configs, override = args[:4]
+if job == "rehearsal":
+    plan, nconf = plan or "bench/plans/rehearsal.yaml", 1
+else:
+    plan = plan or "bench/plans/gpu.yaml"
+    nconf = max(1, len([c for c in configs.split(",") if c.strip()]))
+text = open(plan).read()
+def items(key):
+    m = re.search(rf"^\s*{key}:\s*\[([^\]]*)\]", text, re.M)
+    return [x.strip() for x in m.group(1).split(",") if x.strip()] if m else []
+def num(key, default):
+    m = re.search(rf"^\s*{key}:\s*([0-9.]+)", text, re.M)
+    return float(m.group(1)) if m else default
+scenarios = [s for s in override.split(",") if s.strip()] or items("scenarios")
+points = len(items("concurrency")) + len(items("fractions"))
+per_point = num("warmupSeconds", 30) + num("maxSeconds", 90) + num("cooldownSeconds", 5)
+matrix = lambda n: n * (points * per_point + 75)  # 75 s: vLLM restart before each scenario
+first_start, crosscheck = 300, 120                # model download + first start; one bench point
+total = nconf * (first_start + matrix(len(scenarios)) + matrix(1) + crosscheck)
+print(math.ceil(total / 60))
+PY
+}

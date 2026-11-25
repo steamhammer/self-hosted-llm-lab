@@ -37,6 +37,33 @@ read -r JOB STATUS < <(python3 -c 'import json,sys; s=json.load(open(sys.argv[1]
 log "session $SESSION: job $JOB, status $STATUS"
 [[ "$STATUS" == succeeded ]] || log "WARNING: the session did not succeed; see $DEST/logs/bootstrap.log"
 
+# The launcher recorded what the provider actually bills (results/launches.jsonl); write that
+# price into the session and its runs, so the analysis computes $/1M tokens from it.
+if [[ -f results/launches.jsonl ]]; then
+  python3 - "$DEST" results/launches.jsonl <<'PY'
+import glob, json, os, sys
+dest, launches = sys.argv[1], sys.argv[2]
+session_path = os.path.join(dest, "session.json")
+session = json.load(open(session_path))
+price = None
+for line in open(launches):
+    rec = json.loads(line)
+    if rec.get("machineId") == session.get("machineId") and rec.get("pricePerHourUsd"):
+        price = rec["pricePerHourUsd"]
+if price is None or session.get("pricePerHourUsd") == price:
+    sys.exit(0)
+session["pricePerHourUsd"] = price
+session["estimatedCostUsd"] = round(price * (session.get("durationS") or 0) / 3600, 4)
+session["priceSource"] = "provider, at pod creation"
+json.dump(session, open(session_path, "w"), indent=2)
+for env_path in glob.glob(os.path.join(dest, "results", "*", "env.json")):
+    env = json.load(open(env_path))
+    env["pricePerHourUsd"], env["priceSource"] = price, "provider, at pod creation"
+    json.dump(env, open(env_path, "w"), indent=2)
+print(f"[fetch] price set to ${price}/h from results/launches.jsonl")
+PY
+fi
+
 # Rehearsals check the pipeline; their numbers are not results.
 if [[ "$JOB" == rehearsal ]]; then ROOT=results/local; else ROOT=results/raw; fi
 mkdir -p "$ROOT"
