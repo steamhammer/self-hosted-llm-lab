@@ -40,6 +40,9 @@ while (($#)); do
 done
 [[ -n "$GPU" ]] || die "--gpu is required (see --help)"
 command -v vastai >/dev/null || die "vastai CLI not found: uv tool install vastai"
+# Offer search works without a key, renting does not: check the login before anything else.
+vastai show user --raw 2>/dev/null | python3 -c 'import json,sys; sys.exit(0 if json.load(sys.stdin).get("id") else 1)' 2>/dev/null ||
+  die "vastai is not logged in: read -rs K && vastai set api-key \"\$K\"; unset K  (key: https://cloud.vast.ai/manage-keys/)"
 
 # Search syntax: https://docs.vast.ai/cli/commands (search offers). Verified hosts, one GPU,
 # a driver for CUDA 12.9+, enough disk and bandwidth to pull ~10 GB of image and weights, and
@@ -78,10 +81,20 @@ if ((DRY)); then
   print_cmd "${CMD[@]}"
   exit 0
 fi
-"${CMD[@]}"
+# vastai exits 0 even when the API refuses, so judge by the response body.
+OUT="$("${CMD[@]}" 2>&1)" || true
+ID="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+try:
+    r = json.load(sys.stdin)
+except ValueError:
+    sys.exit(1)
+if not r.get("success") or not r.get("new_contract"):
+    sys.exit(1)
+print(r["new_contract"])' 2>/dev/null)" || die "instance not created: $OUT"
+log "instance $ID created; it deletes itself when the job ends or after ${MAX_RUNTIME_MIN}m"
 cat <<EOF
 
-Watch:   vastai show instances   (logs: vastai logs <instance-id>)
+Watch:   vastai show instances   (logs: vastai logs $ID)
 Results: infra/fetch.sh          (session folder appears in R2 within a few minutes)
-Abort:   vastai destroy instance <instance-id>
+Abort:   vastai destroy instance $ID
 EOF
