@@ -9,13 +9,20 @@ die() {
 }
 
 # Loads KEY=VALUE pairs from a dotenv file into the environment (laptop side: .env).
+# An empty `KEY=` line is dropped rather than exported: vastai and runpodctl prefer
+# VAST_API_KEY / RUNPOD_API_KEY from the environment, and an empty one would hide the key
+# they keep in their own config.
 load_env_file() {
-  if [[ -f "$1" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    . "$1"
-    set +a
-  fi
+  [[ -f "$1" ]] || return 0
+  set -a
+  # shellcheck disable=SC1090
+  . "$1"
+  set +a
+  local k
+  while IFS='=' read -r k _; do
+    [[ "$k" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
+    [[ -n "${!k:-}" ]] || unset "$k"
+  done <"$1"
 }
 
 # Defines an rclone remote named "r2" from the R2_* variables, without any rclone config file.
