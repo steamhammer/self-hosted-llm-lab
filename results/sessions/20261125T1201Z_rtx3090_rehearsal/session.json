@@ -1,0 +1,19 @@
+{
+  "session": "20261125T1201Z_rtx3090_rehearsal",
+  "label": "rtx3090_rehearsal",
+  "job": "rehearsal",
+  "status": "failed",
+  "exitCode": 1,
+  "startedAt": "2026-11-25T12:01:50Z",
+  "finishedAt": "2026-11-25T12:02:01Z",
+  "durationS": 11,
+  "provider": "vast",
+  "machineId": "62514643",
+  "gpus": [
+    "NVIDIA GeForce RTX 3090"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "5a73814f044154d05d6dde061b7bf8ffacfe5ab2",
+  "pricePerHourUsd": 0.2036,
+  "estimatedCostUsd": 0.0006
+}
