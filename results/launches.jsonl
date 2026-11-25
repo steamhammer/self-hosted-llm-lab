@@ -1,1 +1,2 @@
 {"provider": "runpod", "machineId": "23nc84uuu0n3d7", "gpu": "NVIDIA A40", "cloud": "SECURE", "pricePerHourUsd": 0.59, "label": "a40_qwen3.5-9b.24gb", "job": "gpu-session", "configs": "qwen3.5-9b.24gb", "maxRuntimeMin": 150, "createdAt": "2026-11-25T14:21:12Z"}
+{"provider": "runpod", "machineId": "lowelaz7x2mvui", "gpu": "NVIDIA GeForce RTX 4090", "cloud": "SECURE", "pricePerHourUsd": 0.89, "label": "rtx4090_qwen3.5-9b.24gb", "job": "gpu-session", "configs": "qwen3.5-9b.24gb", "maxRuntimeMin": 174, "createdAt": "2026-11-25T19:27:30Z"}

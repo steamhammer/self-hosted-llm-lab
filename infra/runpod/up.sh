@@ -20,8 +20,8 @@
 #   --keep-alive     keep the pod after the job (still capped by --max-min)
 #   --dry-run        print the estimate and the command with secrets redacted, create nothing
 #
-# Reads .env (R2_*, HF_TOKEN, LAB_IMAGE). Needs runpodctl configured (runpodctl doctor):
-# https://docs.runpod.io/runpodctl/overview
+# Reads .env (R2_*, HF_TOKEN, LAB_IMAGE). Uses runpodctl when installed and configured
+# (https://docs.runpod.io/runpodctl/overview); otherwise infra/runpod_api.py with RUNPOD_API_KEY.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 . infra/lib.sh
@@ -87,7 +87,8 @@ for raw in "${GPU_LIST[@]}"; do
   export LABEL
   launch_checks
 
-  CMD=(runpodctl pod create
+  if command -v runpodctl >/dev/null; then
+    CMD=(runpodctl pod create
     --name "lab-$LABEL"
     --image "$LAB_IMAGE"
     --gpu-id "$GPU" --gpu-count 1
@@ -96,6 +97,18 @@ for raw in "${GPU_LIST[@]}"; do
     --min-cuda-version 12.9
     --ports "8000/http,8080/http"
     --env "$(pod_env_json)")
+    DELETE=(runpodctl pod delete)
+  else
+    # No runpodctl: the REST API client reads the same settings as JSON on stdin.
+    SPEC="$(POD_ENV="$(pod_env_json)" python3 -c 'import json, os, sys
+a = sys.argv[1:]
+print(json.dumps({"name": a[0], "image": a[1], "gpu": a[2], "cloud": a[3], "disk": int(a[4]),
+                  "minCudaVersion": "12.9", "ports": ["8000/http", "8080/http"],
+                  "env": json.loads(os.environ["POD_ENV"])}))' "lab-$LABEL" "$LAB_IMAGE" "$GPU" "$CLOUD" "$DISK")"
+    # shellcheck disable=SC2016 # $1 is expanded by the inner bash
+    CMD=(bash -c 'python3 infra/runpod_api.py create <<<"$1"' _ "$SPEC")
+    DELETE=(python3 infra/runpod_api.py delete)
+  fi
 
   if ((DRY)); then
     log "would try: $GPU ($CLOUD) as lab-$LABEL"
@@ -121,7 +134,7 @@ print(d.get("id") or "-", d.get("costPerHr") or "-")') || true
 
   if [[ "$COST" != "-" ]] && python3 -c "import sys; sys.exit(0 if $COST > $MAX_PRICE else 1)"; then
     log "  pod $ID bills \$$COST/h, above --max-price \$$MAX_PRICE: deleting it"
-    runpodctl pod delete "$ID" >/dev/null 2>&1 || log "  ERROR: delete $ID by hand: runpodctl pod delete $ID"
+    "${DELETE[@]}" "$ID" >/dev/null 2>&1 || log "  ERROR: delete $ID by hand: runpodctl pod delete $ID"
     errors+=("$GPU: \$$COST/h above the limit")
     continue
   fi

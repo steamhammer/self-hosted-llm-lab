@@ -14,23 +14,34 @@ cd "$(dirname "$0")/.."
 . infra/lib.sh
 load_env_file .env
 rclone_env
-command -v rclone >/dev/null || die "rclone not found: brew install rclone (https://rclone.org/install/)"
+# rclone when installed (https://rclone.org/install/); otherwise the standard-library client
+# infra/r2.py, which needs nothing installed (R2 only, not a RESULTS_REMOTE folder).
+if command -v rclone >/dev/null; then
+  remote_dirs() { rclone lsf --dirs-only "$BASE" | sed 's:/$::'; }
+  remote_get() { rclone copy "$BASE/$1" "$2" --transfers 8 --stats 0 --log-level ERROR; }
+else
+  [[ -z "${RESULTS_REMOTE:-}" ]] || die "RESULTS_REMOTE needs rclone"
+  log "rclone not found: using infra/r2.py"
+  PREFIX="${RESULTS_PREFIX:-runs}"
+  remote_dirs() { python3 infra/r2.py dirs "$PREFIX/"; }
+  remote_get() { python3 infra/r2.py get "$PREFIX/$1/" "$2" >/dev/null; }
+fi
 BASE="$(remote_base)"
 
 if (($# == 0)); then
-  rclone lsf --dirs-only "$BASE" | sed 's:/$::' | sort
+  remote_dirs | sort
   exit 0
 fi
 
 SESSION="$1"
 if [[ "$SESSION" == latest ]]; then
-  SESSION="$(rclone lsf --dirs-only "$BASE" | sed 's:/$::' | sort | tail -n1)"
+  SESSION="$(remote_dirs | sort | tail -n1)"
   [[ -n "$SESSION" ]] || die "no sessions in $BASE"
 fi
 DEST="results/sessions/$SESSION"
 mkdir -p "$DEST"
 log "downloading $BASE/$SESSION → $DEST"
-rclone copy "$BASE/$SESSION" "$DEST" --transfers 8 --stats 0 --log-level ERROR
+remote_get "$SESSION" "$DEST"
 
 [[ -f "$DEST/session.json" ]] || die "no session.json in $DEST: not a lab session?"
 read -r JOB STATUS < <(python3 -c 'import json,sys; s=json.load(open(sys.argv[1])); print(s.get("job"), s.get("status"))' "$DEST/session.json")
