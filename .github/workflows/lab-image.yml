@@ -23,7 +23,7 @@ on:
 
 concurrency:
   group: lab-image
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
