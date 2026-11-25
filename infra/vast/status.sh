@@ -19,9 +19,11 @@ try:
     i = json.load(sys.stdin)
 except ValueError:
     i = {}
+if isinstance(i, dict) and "instances" in i:  # some CLI versions wrap the instance
+    i = i["instances"] or {}
 if isinstance(i, list):
     i = i[0] if i else {}
-if not i or i.get("error"):
+if not isinstance(i, dict) or not i.get("id") or i.get("error"):
     print("gone (no such instance)")
     sys.exit(3)
 age = (time.time() - (i.get("start_date") or time.time())) / 60

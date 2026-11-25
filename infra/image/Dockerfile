@@ -5,8 +5,8 @@
 #   docker buildx build --platform linux/amd64 -f infra/image/Dockerfile \
 #     --build-arg LAB_GIT_SHA="$(git rev-parse HEAD)" -t ghcr.io/<owner>/llm-lab:<tag> .
 #
-# Built and pushed by .github/workflows/lab-image.yml. The final stage only adds COPY layers
-# on top of vLLM, so a provider that already caches vllm/vllm-openai pulls just a few hundred MB.
+# Built and pushed by .github/workflows/lab-image.yml. The final stage adds a torchcodec fix and
+# COPY layers on top of vLLM, so a host that already caches vllm/vllm-openai pulls a few hundred MB.
 
 # CUDA 12.9 build: more rental hosts have a driver for 12.9 than for 13.0 (the default tag).
 # Images: https://hub.docker.com/r/vllm/vllm-openai/tags
@@ -51,6 +51,13 @@ FROM ${RCLONE_IMAGE} AS rclone
 FROM ${VLLM_IMAGE}
 ARG VLLM_IMAGE
 ARG LAB_GIT_SHA=unknown
+# vllm-openai:v0.32.0-cu129 ships torchcodec 0.17.0, a CUDA 13 build that cannot load in this
+# CUDA 12.9 image, and `vllm serve` dies on import even for text-only models
+# (https://github.com/vllm-project/vllm/issues/63121). Install the matching cu129 build, the
+# workaround confirmed there, and fail the image build if the import is still broken.
+RUN PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --no-cache-dir --no-deps --force-reinstall \
+      --index-url https://download.pytorch.org/whl/cu129 "torchcodec==0.16.0" \
+ && python3 -c "import torchcodec.decoders; print('torchcodec', torchcodec.__version__, 'ok')"
 # Official Node.js binaries need only glibc >= 2.28, which the vLLM (Ubuntu) base has.
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=rclone /usr/local/bin/rclone /usr/local/bin/rclone
