@@ -192,12 +192,14 @@ launch_checks() {
   [[ "$JOB" != gpu-session || -n "${CONFIGS:-}" ]] || die "JOB=gpu-session needs CONFIGS"
 }
 
-# plan_estimate JOB [PLAN] [CONFIGS] [SCENARIOS] → worst-case minutes of work inside the pod
-# (every ladder and open-loop point running to maxSeconds, a vLLM restart per scenario, the
-# gateway pass and the cross-check). Image pull time is not included.
+# plan_estimate JOB [PLAN] [CONFIGS] [SCENARIOS] → worst-case minutes of work inside the pod.
+# Every ladder and open-loop point is assumed to run in full. A closed-loop point lasts at least
+# maxSeconds, but also until minRequests have completed: at concurrency 1 with 1000-token answers
+# that is 30 requests × ~40 s, a quarter of an hour (the first 9B session ran 28% over an estimate
+# that ignored this). Request time = 1 s + outputTokens × 40 ms. Image pull is not included.
 plan_estimate() {
   python3 - "$@" <<'PY'
-import math, re, sys
+import math, os, re, sys
 args = sys.argv[1:] + [""] * 4
 job, plan, configs, override = args[:4]
 if job == "rehearsal":
@@ -206,18 +208,29 @@ else:
     plan = plan or "bench/plans/gpu.yaml"
     nconf = max(1, len([c for c in configs.split(",") if c.strip()]))
 text = open(plan).read()
-def items(key):
-    m = re.search(rf"^\s*{key}:\s*\[([^\]]*)\]", text, re.M)
+def items(src, key):
+    m = re.search(rf"^\s*{key}:\s*\[([^\]]*)\]", src, re.M)
     return [x.strip() for x in m.group(1).split(",") if x.strip()] if m else []
-def num(key, default):
-    m = re.search(rf"^\s*{key}:\s*([0-9.]+)", text, re.M)
+def num(src, key, default):
+    m = re.search(rf"^\s*{key}:\s*([0-9.]+)", src, re.M)
     return float(m.group(1)) if m else default
-scenarios = [s for s in override.split(",") if s.strip()] or items("scenarios")
-points = len(items("concurrency")) + len(items("fractions"))
-per_point = num("warmupSeconds", 30) + num("maxSeconds", 90) + num("cooldownSeconds", 5)
-matrix = lambda n: n * (points * per_point + 75)  # 75 s: vLLM restart before each scenario
-first_start, crosscheck = 300, 120                # model download + first start; one bench point
-total = nconf * (first_start + matrix(len(scenarios)) + matrix(1) + crosscheck)
+warmup, max_s = num(text, "warmupSeconds", 30), num(text, "maxSeconds", 90)
+cooldown, min_req = num(text, "cooldownSeconds", 5), num(text, "minRequests", 30)
+ladder = [int(c) for c in items(text, "concurrency")]
+fractions = items(text, "fractions")
+def request_s(name):
+    path = f"bench/scenarios/{name}.yaml"
+    src = open(path).read() if os.path.exists(path) else ""
+    return 1 + num(src, "outputTokens", 256) * 0.04
+def scenario_s(name):
+    e2e = request_s(name)
+    closed = sum(warmup + max(max_s, math.ceil(min_req / c) * e2e) + e2e + cooldown for c in ladder)
+    opened = len(fractions) * (warmup + max_s + e2e + cooldown)
+    return 75 + closed + opened  # 75 s: vLLM restart before each scenario
+scenarios = [s for s in override.split(",") if s.strip()] or items(text, "scenarios")
+first_start, crosscheck = 300, 120  # model download + first start; one bench point
+gateway = scenario_s("chat") if os.environ.get("GATEWAY_PASS", "1") != "0" else 0
+total = nconf * (first_start + sum(scenario_s(s) for s in scenarios) + gateway + crosscheck)
 print(math.ceil(total / 60))
 PY
 }

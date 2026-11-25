@@ -1,0 +1,20 @@
+{
+  "session": "20261125T1431Z_a40_qwen3.5-9b.24gb",
+  "label": "a40_qwen3.5-9b.24gb",
+  "job": "gpu-session",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-11-25T14:31:19Z",
+  "finishedAt": "2026-11-25T16:54:52Z",
+  "durationS": 8613,
+  "provider": "runpod",
+  "machineId": "23nc84uuu0n3d7",
+  "gpus": [
+    "NVIDIA A40"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "368de4ad6a6b6b30aa0711f6c237b6967dbc7bf0",
+  "pricePerHourUsd": 0.59,
+  "estimatedCostUsd": 1.4116,
+  "priceSource": "provider, at pod creation"
+}

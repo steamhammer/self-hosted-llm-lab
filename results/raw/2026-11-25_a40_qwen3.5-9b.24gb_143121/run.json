@@ -1,0 +1,14 @@
+{
+  "label": "a40_qwen3.5-9b.24gb",
+  "startedAt": "2026-11-25T14:38:03.959Z",
+  "loadgenVersion": "0.1.0",
+  "target": "http://127.0.0.1:8000",
+  "model": "Qwen/Qwen3.5-9B",
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "tokenize",
+    "sampleWords": 2000,
+    "sampleTokens": 2000
+  },
+  "finishedAt": "2026-11-25T16:25:40.366Z"
+}

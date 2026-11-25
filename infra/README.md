@@ -106,9 +106,13 @@ infra/runpod/up.sh --gpu "NVIDIA GeForce RTX 4090,NVIDIA RTX A5000,NVIDIA GeForc
   deleted at once and the next GPU is tried. The price goes to `results/launches.jsonl`, and
   `infra/fetch.sh` writes it into `session.json` and every run's `env.json`, so $/1M tokens is
   computed from what was actually billed.
-- Without `--max-min` the cap is the plan's worst-case length + 25%: every point running to
-  `maxSeconds`, a vLLM restart per scenario, the gateway pass and the cross-check. The dry run
-  prints that estimate (about 112 minutes for `gpu.yaml` with one config).
+- Without `--max-min` the cap is the plan's worst-case length + 10% + 15 minutes. The estimate
+  counts every point in full, a vLLM restart per scenario, the gateway pass and the cross-check,
+  and that a closed-loop point runs until `minRequests` have completed: at concurrency 1 with
+  1000-token answers that alone is about a quarter of an hour. For `gpu.yaml` with one config it
+  is about 3 hours; the first session (Qwen3.5-9B on an A40) took 2 h 24 min.
+- `--no-gateway` skips the chat pass through the gateway (about half an hour) when only the
+  serving numbers matter.
 - `--configs` takes several comma-separated names from `serving/configs/`; a failed config does
   not stop the next one.
 

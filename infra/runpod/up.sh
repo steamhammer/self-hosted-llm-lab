@@ -12,10 +12,11 @@
 #   --configs LIST   for gpu-session: comma-separated serving/configs names
 #   --plan FILE      for gpu-session: plan to run (default bench/plans/gpu.yaml)
 #   --scenarios LIST override the plan's scenarios, e.g. chat,rag
+#   --no-gateway     gpu-session: skip the pass through the gateway (saves ~30 min)
 #   --label TAG      default <gpu>_<job> or <gpu>_<config>
 #   --cloud TYPE     SECURE (default: datacenter hosts, reliable image pulls) | COMMUNITY
 #   --disk GB        container disk for model weights and caches (default 40, gpu-session 80)
-#   --max-min N      hard runtime cap in minutes (default: the plan's worst-case estimate + 25%)
+#   --max-min N      hard runtime cap in minutes (default: the plan's worst-case estimate + 10% + 15)
 #   --keep-alive     keep the pod after the job (still capped by --max-min)
 #   --dry-run        print the estimate and the command with secrets redacted, create nothing
 #
@@ -37,13 +38,14 @@ while (($#)); do
     --configs) CONFIGS="$2"; shift 2 ;;
     --plan) PLAN="$2"; shift 2 ;;
     --scenarios) SCENARIOS="$2"; shift 2 ;;
+    --no-gateway) GATEWAY_PASS=0; shift ;;
     --label) USER_LABEL="$2"; shift 2 ;;
     --cloud) CLOUD="$2"; shift 2 ;;
     --disk) DISK="$2"; shift 2 ;;
     --max-min) MAX_MIN="$2"; shift 2 ;;
     --keep-alive) KEEP_ALIVE=1; shift ;;
     --dry-run) DRY=1; shift ;;
-    -h | --help) sed -n '2,23p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,24p' "$0"; exit 0 ;;
     *) die "unknown option $1 (see --help)" ;;
   esac
 done
@@ -52,18 +54,18 @@ done
 [[ -n "$DISK" ]] || if [[ "$JOB" == gpu-session ]]; then DISK=80; else DISK=40; fi
 
 # The cap comes from the plan unless given: a cap below the plan's length would cut the run.
-EST="$(plan_estimate "$JOB" "${PLAN:-}" "${CONFIGS:-}" "${SCENARIOS:-}")"
+EST="$(GATEWAY_PASS="${GATEWAY_PASS:-1}" plan_estimate "$JOB" "${PLAN:-}" "${CONFIGS:-}" "${SCENARIOS:-}")"
 if [[ -n "$MAX_MIN" ]]; then
   MAX_RUNTIME_MIN="$MAX_MIN"
   ((MAX_MIN >= EST)) || log "WARNING: --max-min $MAX_MIN is below the worst-case estimate of ${EST}m"
 else
-  MAX_RUNTIME_MIN=$((EST * 5 / 4 + 10))
+  MAX_RUNTIME_MIN=$((EST * 11 / 10 + 15)) # the estimate is already a worst case
 fi
 
 PROVIDER=runpod
 unset GPU_PRICE_PER_HOUR_USD
 [[ -z "$PRICE" ]] || GPU_PRICE_PER_HOUR_USD="$PRICE"
-export JOB MAX_RUNTIME_MIN KEEP_ALIVE PROVIDER CONFIGS="${CONFIGS:-}" PLAN="${PLAN:-}" SCENARIOS="${SCENARIOS:-}"
+export JOB MAX_RUNTIME_MIN KEEP_ALIVE PROVIDER CONFIGS="${CONFIGS:-}" PLAN="${PLAN:-}" SCENARIOS="${SCENARIOS:-}" GATEWAY_PASS="${GATEWAY_PASS:-}"
 [[ -z "${GPU_PRICE_PER_HOUR_USD:-}" ]] || export GPU_PRICE_PER_HOUR_USD
 
 log "job $JOB, worst case ≈ ${EST}m of work, cap ${MAX_RUNTIME_MIN}m (+ image pull, billed too)," \
