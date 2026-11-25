@@ -34,6 +34,8 @@ infra/fetch.sh ◀────── R2 ◀────────────�
 | `terminate.py` | Deletes the current RunPod pod or Vast.ai instance via the provider API |
 | `runpod/up.sh`, `vast/up.sh` | Launchers: build the pod environment from `.env`, print the worst-case cost |
 | `fetch.sh` | Lists and downloads sessions from R2, files the runs, runs the analysis |
+| `vast/status.sh` | Instance state and the host's image pull progress (`--watch` to follow) |
+| `image_info.py` | Compressed size of the lab image and whether it is public |
 | `lib.sh` | Shared shell helpers |
 
 ## One-time setup
@@ -70,7 +72,16 @@ GPU names: [RunPod GPU types](https://docs.runpod.io/references/gpu-types) (the 
 column); for Vast, `vastai search offers 'num_gpus=1' -o dph` shows `gpu_name` values (spaces
 become underscores).
 
-Then, in 10–20 minutes (image pull and model download come first):
+The host first pulls the ~11 GB image (`infra/image_info.py` shows the size), which is why the
+Vast launcher only takes hosts with ≥1000 Mbit/s measured download (`--min-down`). Follow it:
+
+```bash
+infra/vast/status.sh <instance-id> --watch   # "loading … Downloading 1.2GB/5.13GB" → running
+vastai logs <instance-id> --tail 30          # once running: the bootstrap log
+```
+
+If the pull makes no progress for ~10 minutes, destroy the instance and launch again (another
+host is picked). Then, once the instance is gone:
 
 ```bash
 infra/fetch.sh            # sessions in the bucket
