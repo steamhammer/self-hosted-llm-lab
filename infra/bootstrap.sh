@@ -84,10 +84,17 @@ if [[ -n "${RESULTS_REMOTE:-}" || (-n "${R2_BUCKET:-}" && -n "${R2_ACCESS_KEY_ID
 fi
 export DEST
 
+# upload [live] → copies the session folder to $DEST.
+# "live" is the periodic upload while vLLM, the GPU sampler and this script still append to their
+# logs: rclone would reject those files ("source file is being updated", md5 mismatch), so a live
+# upload takes them as they are at that moment and skips the checksum. The final upload runs
+# after every writer has stopped and keeps full verification.
 upload() {
   [[ -n "$DEST" ]] || return 1
+  local live=()
+  [[ "${1:-}" == live ]] && live=(--local-no-check-updated --ignore-checksum)
   rclone copy "$LAB_WORK" "$DEST" --exclude '*.pid' --transfers 8 --retries 3 \
-    --low-level-retries 10 --stats 0 --log-level ERROR
+    --low-level-retries 10 --stats 0 --log-level ERROR ${live[@]+"${live[@]}"}
 }
 
 write_session() {
@@ -150,7 +157,8 @@ cleanup() {
   [[ -n "$DEST" ]] || log "no results destination configured"
   for attempt in 1 2 3; do
     [[ -n "$DEST" ]] || break
-    if upload; then
+    # The last attempt tolerates files that still change (rclone's own errors land in bootstrap.log).
+    if upload "$([[ $attempt == 3 ]] && echo live)"; then
       ok=1
       break
     fi
@@ -178,7 +186,7 @@ cleanup() {
     log "KEEP_ALIVE time is over"
   fi
   log "deleting this machine"
-  upload || true
+  upload live || true # bootstrap.log is still open for writing here
   terminate_machine || log "ERROR: self-termination failed: delete the machine by hand"
   [[ -n "$WATCHDOG_PID" ]] && kill -- "-$WATCHDOG_PID" 2>/dev/null
   park "$rc"
@@ -217,7 +225,7 @@ log "preflight ok: results go to $DEST"
 
 # Periodic upload, so a crash or a hung cleanup loses at most one interval.
 # shellcheck disable=SC2016
-setsid bash -c 'while sleep "$SYNC_INTERVAL_S"; do upload || log "periodic upload failed"; done' &
+setsid bash -c 'while sleep "$SYNC_INTERVAL_S"; do upload live || log "periodic upload failed"; done' &
 SYNC_PID=$!
 
 setsid bash "$JOB_SCRIPT" &

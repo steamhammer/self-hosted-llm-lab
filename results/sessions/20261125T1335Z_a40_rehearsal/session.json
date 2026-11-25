@@ -1,0 +1,19 @@
+{
+  "session": "20261125T1335Z_a40_rehearsal",
+  "label": "a40_rehearsal",
+  "job": "rehearsal",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-11-25T13:35:54Z",
+  "finishedAt": "2026-11-25T13:47:50Z",
+  "durationS": 716,
+  "provider": "runpod",
+  "machineId": "z4e33hbwji7hjb",
+  "gpus": [
+    "NVIDIA A40"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "fab96bda28e1cfdc6a7acddc8af46a8f45d94c95",
+  "pricePerHourUsd": 0.6,
+  "estimatedCostUsd": 0.1193
+}

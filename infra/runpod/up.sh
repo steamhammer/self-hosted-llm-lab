@@ -62,10 +62,18 @@ if ((DRY)); then
   print_cmd "${CMD[@]}"
   exit 0
 fi
-"${CMD[@]}"
+# runpodctl echoes the whole pod spec, environment included: never print it as is.
+OUT="$("${CMD[@]}" 2>&1)" || die "pod not created: $(printf '%s' "$OUT" | redact)"
+ID="$(printf '%s' "$OUT" | python3 -c 'import json,sys
+try:
+    print(json.load(sys.stdin).get("id") or "")
+except ValueError:
+    pass' 2>/dev/null)"
+[[ -n "$ID" ]] || die "unexpected runpodctl answer: $(printf '%s' "$OUT" | redact | head -c 400)"
+log "pod $ID created; it deletes itself when the job ends or after ${MAX_RUNTIME_MIN}m"
 cat <<EOF
 
-Watch:   runpodctl pod list      (logs: RunPod console → pod → Logs)
+Watch:   runpodctl pod list      (logs: https://www.runpod.io/console/pods → $ID → Logs)
 Results: infra/fetch.sh          (session folder appears in R2 within a minute)
-Abort:   runpodctl pod delete <pod-id>
+Abort:   runpodctl pod delete $ID
 EOF
