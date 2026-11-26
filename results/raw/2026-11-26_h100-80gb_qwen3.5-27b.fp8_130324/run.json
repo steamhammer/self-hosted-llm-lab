@@ -1,0 +1,14 @@
+{
+  "label": "h100-80gb_qwen3.5-27b.fp8",
+  "startedAt": "2026-11-26T13:09:40.218Z",
+  "loadgenVersion": "0.1.0",
+  "target": "http://127.0.0.1:8000",
+  "model": "Qwen/Qwen3.5-27B-FP8",
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "tokenize",
+    "sampleWords": 2000,
+    "sampleTokens": 2000
+  },
+  "finishedAt": "2026-11-26T13:32:20.358Z"
+}

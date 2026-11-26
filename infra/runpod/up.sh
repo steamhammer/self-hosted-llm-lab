@@ -51,7 +51,21 @@ while (($#)); do
 done
 [[ -n "$GPUS" ]] || die "--gpu is required (see --help)"
 [[ "$JOB" != gpu-session || -n "${CONFIGS:-}" ]] || die "--job gpu-session needs --configs"
-[[ -n "$DISK" ]] || if [[ "$JOB" == gpu-session ]]; then DISK=80; else DISK=40; fi
+# Every config's weights stay on the container disk for the whole session, so the default
+# disk grows with the configs: 30 GB for the image and caches plus a rough size per model.
+weights_gb() {
+  local total=0 c
+  for c in ${1//,/ }; do
+    case "$c" in
+      *27b.bf16*) total=$((total + 60)) ;;
+      *27b*) total=$((total + 35)) ;;
+      *9b*) total=$((total + 20)) ;;
+      *) total=$((total + 10)) ;;
+    esac
+  done
+  echo "$total"
+}
+[[ -n "$DISK" ]] || if [[ "$JOB" == gpu-session ]]; then DISK=$((30 + $(weights_gb "$CONFIGS"))); else DISK=40; fi
 
 # The cap comes from the plan unless given: a cap below the plan's length would cut the run.
 EST="$(GATEWAY_PASS="${GATEWAY_PASS:-1}" plan_estimate "$JOB" "${PLAN:-}" "${CONFIGS:-}" "${SCENARIOS:-}")"
