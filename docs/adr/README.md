@@ -11,6 +11,7 @@ A superseded ADR is not deleted: its status changes to `Superseded by NNNN`.
 | [0004](0004-api-gateway.md) | API gateway: custom TypeScript service | Accepted |
 | [0005](0005-load-generator.md) | Load generator: own TypeScript tool, vLLM's benchmark as cross-check | Accepted |
 | [0006](0006-pod-automation.md) | Pod automation: one image, one job per pod, self-deletion | Accepted |
+| [0007](0007-quality-and-api-comparison.md) | Experiment 2: hosted APIs through OpenRouter, quality with lm-evaluation-harness | Accepted |
 
 ## Template
 

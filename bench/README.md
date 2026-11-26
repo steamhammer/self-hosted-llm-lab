@@ -21,6 +21,9 @@ bench/run_matrix.sh ─┬─ collect_env.py        → env.json (GPU, driver, P
 | `crosscheck.sh` | The same point measured with `vllm bench serve` |
 | `prepare_sharegpt.py` | Builds `data/sharegpt.jsonl` for the realistic profile |
 | `analyze/analyze.py` | Tables, capacity under SLO, $/1M tokens, charts, run comparison, cross-check |
+| `analyze/exp2.py` | Experiment 2: break-even load U*, hosted-API latency and billed cost, quality with paired tests |
+| `api/providers.yaml`, `api/run_api.py` | Experiment 2: hosted endpoints (dated prices and quantization) and one loadgen run per endpoint |
+| `eval/` | Experiment 2: quality runs with lm-evaluation-harness (`run_eval.py`, the `lab-chat` model, the fixed MMLU-Pro sample) |
 | `tests/` | pytest for the analysis |
 
 ## Running
@@ -56,6 +59,34 @@ GPU campaigns. `env.json` describes the inference server itself (the plan's `tok
 
 Any plan field can be overridden on the command line: `--target`, `--model`, `--scenarios a,b`,
 `--metrics-url`, `--tokenize-url`, `--out`.
+
+## Experiment 2: hosted APIs and quality
+
+Rules: [methodology §11](../docs/methodology.md#11-experiment-2-hosted-apis-and-quality),
+choices: [ADR-0007](../docs/adr/0007-quality-and-api-comparison.md). Python parts need the `eval`
+dependency group: `uv sync --all-packages --group eval`.
+
+```bash
+# once, before the first paid run (needs huggingface.co): draw and commit the MMLU-Pro sample
+uv run --package bench --group eval python bench/eval/make_mmlu_pro_sample.py
+
+# hosted APIs: every endpoint in api/providers.yaml, one daypart (morning | day | evening)
+OPENROUTER_API_KEY=... uv run --package bench python bench/api/run_api.py --daypart morning
+
+# quality of one hosted endpoint (our own variants run on a pod: infra/jobs/eval-session.sh)
+OPENROUTER_API_KEY=... uv run --package bench --group eval python bench/eval/run_eval.py \
+  --url https://openrouter.ai/api/v1/chat/completions --key-env OPENROUTER_API_KEY \
+  --model qwen/qwen3.5-27b --label api_deepinfra-fp8_27b --concurrency 8 \
+  --extra-body '{"provider":{"only":["deepinfra/fp8"],"allow_fallbacks":false},"reasoning":{"effort":"none"}}'
+
+# analysis → results/exp2/
+uv run --package bench python bench/analyze/exp2.py breakeven
+uv run --package bench python bench/analyze/exp2.py api results/raw/*_api_*
+uv run --package bench python bench/analyze/exp2.py quality results/eval/* --ref <our BF16 eval dir>
+```
+
+Dry run of the API path without a key: `pnpm dev:mock:sim`, then the command in the header of
+`plans/local-api.yaml`.
 
 ## Reading a report
 

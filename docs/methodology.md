@@ -1,6 +1,7 @@
 # Benchmark methodology
 
-**Version:** 1.1 (frozen) · **Status:** frozen 2026-11-24, before the first paid GPU run.
+**Version:** 1.2 (frozen) · **Status:** 1.1 frozen 2026-11-24, before the first paid GPU run;
+§11 (experiment 2) added in 1.2 on 2026-11-26, before its first paid run.
 Every result in this repository is tagged with the methodology version it was measured under.
 Changes after the freeze go to the [changelog](#changelog) with a date and a reason.
 
@@ -14,7 +15,10 @@ Measure, for each *model × quantization × GPU* configuration served by [vLLM](
 4. **cost** per 1M tokens at that capacity;
 5. the overhead added by the API gateway.
 
-Non-goals: model quality evaluation, multi-GPU / tensor-parallel serving, training.
+Experiment 2 (§11) adds what the first one left out: the same models behind hosted APIs, and the
+quality each quantization keeps.
+
+Non-goals: multi-GPU / tensor-parallel serving, training.
 
 ## 2. System under test
 
@@ -206,9 +210,111 @@ results/raw/<YYYY-MM-DD>_<gpu>_<model>_<quant>[_<path>]_<HHMMSS>/
   crosscheck/         # vllm bench serve results (bench/crosscheck.sh)
 ```
 
+## 11. Experiment 2: hosted APIs and quality
+
+Question: when is renting a GPU cheaper than paying an API for the same model, and what does a
+cheaper quantization cost in answer quality? §1–§10 still hold for everything measured on our own
+GPUs; this section adds the API side and the quality runs. Tools and task sets:
+[ADR-0007](adr/0007-quality-and-api-comparison.md).
+
+### 11.1 Hosted APIs: latency and billed cost
+
+- **Router and endpoints.** Every API is reached through [OpenRouter](https://openrouter.ai), one
+  provider per run, pinned with `provider: {only: [<slug>], allow_fallbacks: false}`
+  ([provider routing](https://openrouter.ai/docs/features/provider-routing)). The endpoints, their
+  declared quantization and their prices are a dated snapshot in
+  [`bench/api/providers.yaml`](../bench/api/providers.yaml), taken from OpenRouter's public
+  endpoint lists. One closed model of the same price class is added for reference.
+- **Workload.** The `chat` and `rag` scenarios with the same random-word prompts. Hosted APIs have
+  no `/tokenize`, so prompt length uses the ratio measured with vLLM in experiment 1 (1.0 token per
+  word for Qwen3.5); the real size still comes from `usage`. They also cannot force the output
+  length (`ignore_eos` is not sent), so every prompt starts with a one-line request for a long
+  answer, and TPOT and cost are computed from the tokens actually returned.
+- **Load.** Closed loop at 1, 2, 4 and 8 concurrent requests, all four points always (no early
+  stop), 30–60 measured requests per point. We measure what a user of the API sees at low load,
+  not the provider's capacity.
+- **Network.** The client runs on a laptop, so API latency includes the internet round trip; our
+  own numbers (§4) do not. The comparison states this next to every chart.
+- **Time of day.** Three runs per endpoint: US morning, day and evening, because a shared provider
+  queue can vary in a way our own GPU does not.
+- **Reasoning off.** Requests carry `reasoning: {effort: none}`
+  ([reasoning tokens](https://openrouter.ai/docs/use-cases/reasoning-tokens)). Every record keeps
+  the reasoning chunks and `reasoning_tokens` it saw; an endpoint that ignores the setting is
+  reported separately, not averaged in.
+- **Errors.** HTTP 429 (rate limit) is counted apart from other errors and does not count against
+  the provider's latency, but is reported.
+- **Cost.** Taken from the billed `usage.cost` of every response
+  ([usage accounting](https://openrouter.ai/docs/use-cases/usage-accounting)) and compared with
+  the price list.
+
+### 11.2 Break-even load
+
+Our $/1M output tokens (§6) already includes processing the prompt; an API bills input and output
+separately. For a scenario with *r* input tokens per output token (chat 512/256 = 2, rag
+4000/300 ≈ 13.3), the API price in our unit is:
+
+```
+API $/1M output (scenario) = r × input price + output price
+U* = our $/1M output at capacity ÷ API $/1M output (scenario)
+```
+
+U* is the share of time a rented GPU must run at capacity to cost the same as the API. Above 100%
+it never pays off. `bench/analyze/exp2.py breakeven` computes it from every run's `capacity.csv`.
+
+### 11.3 Quality
+
+- **Tool.** [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) 0.4.13,
+  pinned, through its chat-completions client, with the chat template applied by the server and
+  few-shot examples as earlier turns. The same client and command run against our vLLM and every
+  API, so a difference in scores comes from the model and how it is served, not from the tool.
+- **Settings.** Temperature 0, thinking off, default generation limit 1,024 tokens (MMLU-Pro sets
+  2,048, IFEval 1,280). For eval runs vLLM gets `--max-model-len 16384` so long few-shot prompts
+  fit; this changes no weights or kernels.
+- **Task sets** (answers are scored by rules, no judge model):
+
+  | Set | Questions | Score |
+  |---|---|---|
+  | GSM8K (`gsm8k_cot_llama`, 8-shot) | 1,319 | exact match of the last number (`flexible-extract`) |
+  | MMLU-Pro (5-shot, chain of thought) | 1,400: 100 per subject, fixed sample, seed 2026 ([`bench/eval/mmlu_pro_sample.json`](../bench/eval/mmlu_pro_sample.json)) | exact match of the chosen letter |
+  | IFEval | 541 | prompt-level strict accuracy |
+
+- **Variants.** Our Qwen3.5-27B in BF16, FP8 and GPTQ-Int4, all on one H100 (quality does not
+  depend on the card; the Int4 kernel on Hopper may round slightly differently from Ada, which is
+  stated as a limitation); our Qwen3.5-9B BF16 on an RTX 4090; the API endpoints of §11.1.
+- **Statistics.** Every variant answers the same questions, so comparisons are paired against our
+  BF16: the difference in accuracy with a 95% paired bootstrap interval (10,000 resamples over
+  questions) and McNemar's exact test on the questions where the two disagree. Each variant is
+  also scored on its own with a 95% bootstrap interval. A difference whose interval covers zero is
+  reported as "no measurable difference", which is a result, not a failure.
+- **Same answer, not only same score.** For every pair: the share of identical extracted answers,
+  the share of identical full responses, and where the responses start to differ. Prompts are
+  checked to be identical by their hash.
+- **Groups for the "math vs knowledge" question.** GSM8K; MMLU-Pro math, physics, chemistry and
+  engineering ("quantitative"); the other ten MMLU-Pro subjects ("knowledge"); IFEval.
+- **Rehearsal before paid runs.** `--limit 20` on a 0.8B model, then 30 answers per set read by
+  hand to confirm the extraction matches Qwen3.5's format. Extraction problems would lower scores
+  for reasons unrelated to the model.
+- **Optional judge.** A pairwise LLM-as-judge comparison on 100 chat and RAG prompts is prepared
+  but run only if the task sets show a difference that needs explaining on realistic prompts.
+
+### 11.4 Raw data
+
+```
+results/raw/<date>_api_<endpoint>_<daypart>_<time>/      # loadgen layout (§10); env.json describes
+                                                        # the endpoint and the price snapshot;
+                                                        # each record has api: {provider, cost,
+                                                        # reasoningTokens, reasoningChunks, ...}
+results/eval/<date>_<label>/ or <session>/…_eval_<gpu>_<config>_<time>/
+  eval.json             # endpoint, tasks, sample file, lm-eval version, wall time
+  results.json          # lm-eval scores
+  samples/<task>.jsonl.gz   # every question: prompt hash, raw response, extracted answer, score
+  usage.jsonl           # per response: tokens, reasoning tokens, billed cost, provider
+```
+
 ## Changelog
 
 | Date | Version | Change | Reason |
 |---|---|---|---|
 | 2026-11-24 | 1.0 | Initial version, frozen | — |
 | 2026-11-24 | 1.1 | Own load generator (loadgen) instead of GuideLLM as the primary tool, `vllm bench serve` as cross-check (§4); open-loop rates as fractions of the ladder's best rate (§4.1); client check via event-loop utilization (§4.3); steady-state throughput window (§5); word-based prompts calibrated with `/tokenize` (§3.1); raw layout (§10) | Same tool and output format against vLLM, gateway, mock and llama.cpp; per-request raw data for our own percentiles and goodput; no dependency on third-party output formats. Changed before any paid run, so no results are affected. |
+| 2026-11-26 | 1.2 | §11: hosted APIs through OpenRouter, break-even load U*, quality with lm-evaluation-harness; §1 no longer lists quality as a non-goal | Experiment 2. Added before its first paid run; §1–§10 unchanged, so experiment 1 results are unaffected. |
