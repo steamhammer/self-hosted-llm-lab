@@ -1,0 +1,20 @@
+{
+  "session": "20261126T0605Z_h100_qwen3.5-27b-fp8",
+  "label": "h100_qwen3.5-27b-fp8",
+  "job": "gpu-session",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-11-26T06:05:00Z",
+  "finishedAt": "2026-11-26T06:32:21Z",
+  "durationS": 1641,
+  "provider": "runpod",
+  "machineId": "f7cz80om8vvk8i",
+  "gpus": [
+    "NVIDIA H100 80GB HBM3"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "9b45fecfd4ad0fb35120531de552d9b72bd5a2ca",
+  "pricePerHourUsd": 4.39,
+  "estimatedCostUsd": 2.0011,
+  "priceSource": "provider, at pod creation"
+}
