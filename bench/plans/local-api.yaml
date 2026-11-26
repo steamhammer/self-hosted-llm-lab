@@ -1,0 +1,28 @@
+# Dry run of the hosted-API path against the mock upstream (no key, no cost):
+#   pnpm dev:mock:sim
+#   OPENROUTER_API_KEY=dummy uv run --package bench python bench/api/run_api.py --daypart day \
+#     --plan bench/plans/local-api.yaml --out-root results/local --only deepinfra-fp8_27b
+name: local-api
+model: qwen/qwen3.5-27b
+target: http://127.0.0.1:8000
+chatPath: /v1/chat/completions
+auth: { bearerEnv: OPENROUTER_API_KEY }
+headers: { X-Title: self-hosted-llm-lab }
+hostedApi: true
+tokensPerWord: 1        # Qwen3.5 tokenizer, measured with vLLM's /tokenize in experiment 1
+sendIgnoreEos: false    # hosted APIs cannot force the output length...
+promptPrefix: "Write a long story that uses all of these words: "   # ...so ask for a long answer
+scenarios: [chat, rag]
+ladder:
+  concurrency: [1, 2, 4, 8]   # low load only: we measure latency, not the provider's capacity
+  stopAfterViolations: 99     # never stop early, every provider gets the same four points
+point:
+  warmupSeconds: 1
+  warmupRequests: 3
+  maxRequests: 12
+  maxSeconds: 5
+  minRequests: 6
+  cooldownSeconds: 0
+extraBody:
+  reasoning: { effort: none }   # methodology §3.4; records show whether the provider obeyed
+seed: 1

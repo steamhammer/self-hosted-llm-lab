@@ -58,7 +58,7 @@ export function randomWords(next: () => number, count: number): string {
 
 export interface Calibration {
   tokensPerWord: number;
-  source: "tokenize" | "default";
+  source: "tokenize" | "fixed" | "default";
   sampleWords: number;
   sampleTokens?: number;
   error?: string;

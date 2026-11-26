@@ -26,6 +26,10 @@ export interface PointDeps {
   /** Open loop only: arrivals beyond this many in-flight requests are dropped. */
   maxInflight: number;
   seed: number;
+  /** Request headers (hosted API auth). */
+  headers?: Record<string, string>;
+  /** Collect hosted-API fields on every record. */
+  api?: boolean;
   onProgress?: (done: number) => void;
 }
 
@@ -72,6 +76,8 @@ export async function runClosedLoop(concurrency: number, deps: PointDeps): Promi
       const outcome = await sendStreaming(deps.url, deps.body(i), {
         dispatcher: deps.dispatcher,
         timeoutMs: config.requestTimeoutSeconds * 1000,
+        headers: deps.headers,
+        api: deps.api,
       });
       records.push({ i, warmup, start: Math.round(start * 100) / 100, ...outcome });
       completed++;
@@ -152,6 +158,8 @@ export async function runOpenLoop(rate: number, deps: PointDeps): Promise<PointR
       const p = sendStreaming(deps.url, deps.body(i), {
         dispatcher: deps.dispatcher,
         timeoutMs: config.requestTimeoutSeconds * 1000,
+        headers: deps.headers,
+        api: deps.api,
       }).then((outcome) => {
         records.push({ i, warmup, start: Math.round(start * 100) / 100, ...outcome });
         if (!warmup) deps.onProgress?.(++measuredDone);

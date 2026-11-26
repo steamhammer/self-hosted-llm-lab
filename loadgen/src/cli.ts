@@ -7,6 +7,7 @@ import { loadPlan, type Plan } from "./plan.ts";
 const USAGE = `Usage:
   loadgen matrix --plan <file> [--target <url>] [--model <id>] [--label <tag>] [--out <dir>]
                  [--scenarios a,b] [--metrics-url <url>] [--tokenize-url <url>]
+                 [--extra-body <json>]   merged over the plan's extraBody (e.g. a pinned provider)
 
 Runs the plan: per scenario a closed-loop concurrency ladder (stops after consecutive SLO
 violations), then open-loop Poisson rates. Writes raw per-request records for bench/analyze.
@@ -37,6 +38,7 @@ async function main(argv: string[]): Promise<number> {
       scenarios: { type: "string" },
       "metrics-url": { type: "string" },
       "tokenize-url": { type: "string" },
+      "extra-body": { type: "string" },
     },
   });
   if (!values.plan) {
@@ -51,6 +53,12 @@ async function main(argv: string[]): Promise<number> {
   if (values["tokenize-url"]) overrides.tokenizeUrl = values["tokenize-url"];
 
   const plan = await loadPlan(values.plan, overrides);
+  if (values["extra-body"]) {
+    const extra = JSON.parse(values["extra-body"]) as unknown;
+    if (!extra || typeof extra !== "object" || Array.isArray(extra))
+      throw new Error("--extra-body must be a JSON object");
+    plan.extraBody = { ...plan.extraBody, ...(extra as Record<string, unknown>) };
+  }
   const label = values.label ?? plan.name;
   const outDir = values.out ?? defaultOut(label);
   process.stderr.write(

@@ -56,6 +56,29 @@ export const PlanSchema = z.object({
   model: z.string().min(1),
   /** Base URL of the OpenAI-compatible API under test (vLLM directly, or the gateway). */
   target: z.url(),
+  /** Path of the chat completions endpoint under target. OpenRouter: /api/v1/chat/completions. */
+  chatPath: z.string().startsWith("/").default("/v1/chat/completions"),
+  /**
+   * Hosted APIs: the bearer key is read from this environment variable at start-up. Only the
+   * variable's name is stored in the plan and in the results, never the key.
+   */
+  auth: z.object({ bearerEnv: z.string().min(1) }).optional(),
+  /** Extra request headers, e.g. OpenRouter's X-Title. Stored with the results: no secrets. */
+  headers: z.record(z.string(), z.string()).default({}),
+  /** Hosted API: record cost, provider and reasoning fields of every response. */
+  hostedApi: z.boolean().default(false),
+  /**
+   * Fixed tokens-per-word ratio instead of asking POST /tokenize (hosted APIs have none). For
+   * Qwen3.5 it is 1.0, measured with vLLM's /tokenize in experiment 1.
+   */
+  tokensPerWord: z.number().positive().optional(),
+  /** Hosted APIs do not take vLLM's ignore_eos; with false the field is not sent at all. */
+  sendIgnoreEos: z.boolean().default(true),
+  /**
+   * Text put before every synthetic prompt. Hosted APIs cannot force the output length, so an
+   * instruction asking for a long answer keeps outputs near max_tokens. A few tokens long.
+   */
+  promptPrefix: z.string().default(""),
   /** Base URL exposing POST /tokenize for prompt-length calibration; defaults to target. */
   tokenizeUrl: z.url().optional(),
   /** Server Prometheus endpoint, snapshotted before and after every point. */

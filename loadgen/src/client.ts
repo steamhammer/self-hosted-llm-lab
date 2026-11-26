@@ -15,22 +15,66 @@ export interface RequestRecord {
   tokenChunks: number;
   status: number;
   error: string | null;
+  /** Hosted APIs only (null on our own server): what the response said about itself. */
+  api?: ApiInfo;
+}
+
+/**
+ * Fields a hosted API reports per response. Kept apart from the timing fields so records from
+ * vLLM and from an API share one schema. `reasoningChunks` > 0 or `reasoningTokens` > 0 means the
+ * provider ignored "reasoning off" (methodology §3.4), which changes both cost and latency.
+ */
+export interface ApiInfo {
+  /** Generation id, for looking the request up later in the provider's dashboard or API. */
+  id: string | null;
+  /** Which upstream served it, when the router says so (OpenRouter's `provider`). */
+  provider: string | null;
+  /** Billed cost in USD from `usage.cost`, as the router computed it. */
+  cost: number | null;
+  reasoningTokens: number | null;
+  cachedTokens: number | null;
+  reasoningChunks: number;
 }
 
 export type Outcome = Omit<RequestRecord, "i" | "warmup" | "start">;
 
 interface Chunk {
-  usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
-  choices?: { delta?: { content?: unknown; reasoning_content?: unknown }; text?: unknown }[];
+  id?: unknown;
+  provider?: unknown;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    cost?: number;
+    completion_tokens_details?: { reasoning_tokens?: number } | null;
+    prompt_tokens_details?: { cached_tokens?: number } | null;
+  } | null;
+  choices?: {
+    delta?: {
+      content?: unknown;
+      reasoning_content?: unknown;
+      reasoning?: unknown;
+      reasoning_details?: unknown;
+    };
+    text?: unknown;
+  }[];
   error?: { code?: unknown; message?: unknown } | unknown;
 }
 
 const nonEmpty = (v: unknown) => typeof v === "string" && v.length > 0;
 
-function hasToken(c: Chunk): boolean {
+function hasReasoning(c: Chunk): boolean {
   return (c.choices ?? []).some(
     (ch) =>
-      nonEmpty(ch.delta?.content) || nonEmpty(ch.delta?.reasoning_content) || nonEmpty(ch.text),
+      nonEmpty(ch.delta?.reasoning_content) ||
+      nonEmpty(ch.delta?.reasoning) ||
+      (Array.isArray(ch.delta?.reasoning_details) && ch.delta.reasoning_details.length > 0),
+  );
+}
+
+function hasToken(c: Chunk): boolean {
+  return (
+    hasReasoning(c) ||
+    (c.choices ?? []).some((ch) => nonEmpty(ch.delta?.content) || nonEmpty(ch.text))
   );
 }
 
@@ -49,7 +93,14 @@ function errorCode(body: unknown, fallback: string): string {
 export async function sendStreaming(
   url: string,
   body: object,
-  opts: { dispatcher: Dispatcher; timeoutMs: number },
+  opts: {
+    dispatcher: Dispatcher;
+    timeoutMs: number;
+    /** Extra request headers (auth for hosted APIs). Never written to results. */
+    headers?: Record<string, string>;
+    /** Collect the ApiInfo fields; on for hosted APIs. */
+    api?: boolean;
+  },
 ): Promise<Outcome> {
   const t0 = performance.now();
   const out: Outcome = {
@@ -62,11 +113,26 @@ export async function sendStreaming(
     status: 0,
     error: null,
   };
+  const api: ApiInfo | undefined = opts.api
+    ? {
+        id: null,
+        provider: null,
+        cost: null,
+        reasoningTokens: null,
+        cachedTokens: null,
+        reasoningChunks: 0,
+      }
+    : undefined;
+  if (api) out.api = api;
   let lastToken = 0;
   try {
     const res = await request(url, {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "text/event-stream" },
+      headers: {
+        ...opts.headers,
+        "content-type": "application/json",
+        accept: "text/event-stream",
+      },
       body: JSON.stringify(body),
       dispatcher: opts.dispatcher,
       signal: AbortSignal.timeout(opts.timeoutMs),
@@ -110,6 +176,20 @@ export async function sendStreaming(
             continue;
           }
           if (chunk.error) out.error = errorCode(chunk, "stream_error");
+          if (api) {
+            if (api.id === null && typeof chunk.id === "string") api.id = chunk.id;
+            if (api.provider === null && typeof chunk.provider === "string")
+              api.provider = chunk.provider;
+            if (hasReasoning(chunk)) api.reasoningChunks++;
+            const u = chunk.usage;
+            if (u) {
+              if (typeof u.cost === "number") api.cost = u.cost;
+              const r = u.completion_tokens_details?.reasoning_tokens;
+              if (typeof r === "number") api.reasoningTokens = r;
+              const c = u.prompt_tokens_details?.cached_tokens;
+              if (typeof c === "number") api.cachedTokens = c;
+            }
+          }
           if (chunk.usage) {
             if (typeof chunk.usage.prompt_tokens === "number")
               out.promptTokens = chunk.usage.prompt_tokens;

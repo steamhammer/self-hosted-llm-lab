@@ -1,0 +1,46 @@
+# Hosted endpoints for experiment 2 (docs/methodology.md §11), reached through OpenRouter.
+# Snapshot of the public endpoint lists, which also state the quantization each provider serves:
+#   https://openrouter.ai/api/v1/models/qwen/qwen3.5-27b/endpoints
+#   https://openrouter.ai/api/v1/models/qwen/qwen3.5-9b/endpoints
+# Prices in USD per 1M tokens on the snapshot date. "unknown" = the provider does not disclose it.
+# Picked to span the quantizations on offer (bf16 / fp8 / fp4 / undisclosed) plus the cheapest.
+snapshot: 2026-11-26
+endpoints:
+  - id: alibaba_27b
+    model: qwen/qwen3.5-27b
+    provider: alibaba
+    quantization: unknown
+    input: 0.195
+    output: 1.56
+  - id: deepinfra-fp8_27b
+    model: qwen/qwen3.5-27b
+    provider: deepinfra/fp8
+    quantization: fp8
+    input: 0.26
+    output: 2.60
+  - id: novita-bf16_27b
+    model: qwen/qwen3.5-27b
+    provider: novita/bf16
+    quantization: bf16
+    input: 0.30
+    output: 2.40
+  - id: darkbloom-fp4_9b
+    model: qwen/qwen3.5-9b
+    provider: darkbloom/fp4
+    quantization: fp4
+    input: 0.08
+    output: 0.13
+  - id: deepinfra-bf16_9b
+    model: qwen/qwen3.5-9b
+    provider: deepinfra/bf16
+    quantization: bf16
+    input: 0.10
+    output: 0.15
+  - id: together_9b
+    model: qwen/qwen3.5-9b
+    provider: together
+    quantization: unknown
+    input: 0.17
+    output: 0.25
+# The closed reference model (one, same price class as 27B) is added here once picked:
+# id, model, provider: null (OpenRouter's default routing), quantization: n/a, prices.

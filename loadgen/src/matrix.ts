@@ -66,26 +66,44 @@ function requestBody(
 ) {
   return {
     model: plan.model,
-    messages: [{ role: "user", content: prompt.prompt }],
+    messages: [{ role: "user", content: plan.promptPrefix + prompt.prompt }],
     max_tokens: prompt.maxTokens,
     stream: true,
     stream_options: { include_usage: true },
     temperature: scenario.temperature,
     ...(scenario.topP !== undefined ? { top_p: scenario.topP } : {}),
-    ...(prompt.ignoreEos ? { ignore_eos: true } : {}),
+    ...(prompt.ignoreEos && plan.sendIgnoreEos ? { ignore_eos: true } : {}),
     ...plan.extraBody,
   };
+}
+
+/** Builds request headers; fails before any request is sent when the API key is missing. */
+export function authHeaders(
+  plan: Plan,
+  env: NodeJS.ProcessEnv = process.env,
+): Record<string, string> {
+  const headers = { ...plan.headers };
+  if (plan.auth) {
+    const key = env[plan.auth.bearerEnv];
+    if (!key) throw new Error(`${plan.auth.bearerEnv} is not set (plan.auth.bearerEnv)`);
+    headers.authorization = `Bearer ${key}`;
+  }
+  return headers;
 }
 
 /** Runs the whole plan: for each scenario a concurrency ladder, then open-loop rates. */
 export async function runMatrix(opts: MatrixOptions): Promise<PointSummary[]> {
   const { plan, outDir, label } = opts;
   const log = opts.log ?? ((s: string) => process.stderr.write(`${s}\n`));
-  const url = new URL("/v1/chat/completions", plan.target).toString();
+  const url = new URL(plan.chatPath, plan.target).toString();
+  const headers = authHeaders(plan);
   const dispatcher = new Agent({ connections: null, keepAliveTimeout: 30_000 });
   await mkdir(outDir, { recursive: true });
 
-  const calibration: Calibration = await calibrate(plan.tokenizeUrl ?? plan.target, plan.model);
+  const calibration: Calibration =
+    plan.tokensPerWord !== undefined
+      ? { tokensPerWord: plan.tokensPerWord, source: "fixed", sampleWords: 0 }
+      : await calibrate(plan.tokenizeUrl ?? plan.target, plan.model);
   log(
     `calibration: ${calibration.tokensPerWord.toFixed(3)} tokens/word (${calibration.source}${calibration.error ? `: ${calibration.error}` : ""})`,
   );
@@ -97,7 +115,10 @@ export async function runMatrix(opts: MatrixOptions): Promise<PointSummary[]> {
     startedAt,
     loadgenVersion: LOADGEN_VERSION,
     target: plan.target,
+    chatPath: plan.chatPath,
     model: plan.model,
+    hostedApi: plan.hostedApi,
+    extraBody: plan.extraBody,
     calibration,
   };
   await writeFile(join(outDir, "run.json"), `${JSON.stringify(runMeta, null, 2)}\n`);
@@ -138,6 +159,8 @@ export async function runMatrix(opts: MatrixOptions): Promise<PointSummary[]> {
           body: (i) => requestBody(plan, scenario, prompts(i)),
           maxInflight: plan.client.maxInflight,
           seed: pointSeed,
+          headers,
+          api: plan.hostedApi,
         };
 
         await snapshot(plan.metricsUrl, join(dir, "metrics-before.prom"));

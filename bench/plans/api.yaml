@@ -1,0 +1,28 @@
+# A hosted API through OpenRouter (experiment 2, methodology §11). One provider per run, pinned
+# without fallback; bench/api/run_api.py fills in the model and provider for every endpoint in
+# bench/api/providers.yaml:
+#   OPENROUTER_API_KEY=... uv run --package bench python bench/api/run_api.py --daypart morning
+name: api
+model: qwen/qwen3.5-27b
+target: https://openrouter.ai
+chatPath: /api/v1/chat/completions
+auth: { bearerEnv: OPENROUTER_API_KEY }
+headers: { X-Title: self-hosted-llm-lab }
+hostedApi: true
+tokensPerWord: 1        # Qwen3.5 tokenizer, measured with vLLM's /tokenize in experiment 1
+sendIgnoreEos: false    # hosted APIs cannot force the output length...
+promptPrefix: "Write a long story that uses all of these words: "   # ...so ask for a long answer
+scenarios: [chat, rag]
+ladder:
+  concurrency: [1, 2, 4, 8]   # low load only: we measure latency, not the provider's capacity
+  stopAfterViolations: 99     # never stop early, every provider gets the same four points
+point:
+  warmupSeconds: 5
+  warmupRequests: 3
+  maxRequests: 60
+  maxSeconds: 60
+  minRequests: 30
+  cooldownSeconds: 2
+extraBody:
+  reasoning: { effort: none }   # methodology §3.4; records show whether the provider obeyed
+seed: 1

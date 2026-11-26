@@ -6,6 +6,7 @@ Why it exists: [ADR-0005](../docs/adr/0005-load-generator.md). How it is used: [
 ```bash
 node loadgen/src/cli.ts matrix --plan bench/plans/gpu.yaml --label 4090_qwen3.5-9b_bf16 \
   [--target URL] [--model ID] [--scenarios a,b] [--metrics-url URL] [--tokenize-url URL] [--out DIR]
+  [--extra-body JSON]   # merged over the plan's extraBody, e.g. a pinned API provider
 ```
 
 ## What it does
@@ -36,7 +37,25 @@ Per point it snapshots the server's `/metrics` before and after, and writes `poi
 | Client saturation | `performance.eventLoopUtilization()` over the point; above `client.maxEventLoopUtilization` (0.8) the point is flagged invalid. |
 | Reproducibility | Every point and request derives its seed from the plan seed, label, scenario and point. |
 
+## Hosted APIs
+
+The same client measures a hosted API (experiment 2, [`bench/plans/api.yaml`](../bench/plans/api.yaml)):
+
+| Plan field | For |
+|---|---|
+| `chatPath` | endpoint path under `target` (OpenRouter: `/api/v1/chat/completions`) |
+| `auth.bearerEnv` | name of the env var holding the key; the key itself is never stored with the results |
+| `headers` | extra request headers (no secrets: they are stored in `plan.yaml`) |
+| `tokensPerWord` | fixed prompt calibration instead of `POST /tokenize` |
+| `sendIgnoreEos: false` | do not send vLLM's `ignore_eos`, which hosted APIs do not take |
+| `promptPrefix` | text before every prompt (asks for a long answer, since the length cannot be forced) |
+| `hostedApi: true` | every record gets `api`: generation id, serving provider, billed `usage.cost`, reasoning tokens and chunks, cached prompt tokens |
+
+Reasoning deltas (`reasoning`, `reasoning_content`, `reasoning_details`) count as tokens for TTFT,
+so a provider that ignores "reasoning off" shows up in the records instead of as a fast first token.
+
 ## Tests
 
 `pnpm --filter loadgen test` — statistics, prompt construction, the client against the simulated
-mock, closed/open loop semantics, overflow handling, and a full matrix with an early ladder stop.
+mock, closed/open loop semantics, overflow handling, a full matrix with an early ladder stop, and
+the hosted-API path against a fake OpenRouter (auth, provider pinning, cost and reasoning fields).
