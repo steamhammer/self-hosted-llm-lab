@@ -1,0 +1,20 @@
+{
+  "session": "20261125T2204Z_l40s_qwen3.5-27b",
+  "label": "l40s_qwen3.5-27b",
+  "job": "gpu-session",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-11-25T22:04:05Z",
+  "finishedAt": "2026-11-26T03:01:16Z",
+  "durationS": 17831,
+  "provider": "runpod",
+  "machineId": "088ib5ned50ztu",
+  "gpus": [
+    "NVIDIA L40S"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "9b45fecfd4ad0fb35120531de552d9b72bd5a2ca",
+  "pricePerHourUsd": 1.09,
+  "estimatedCostUsd": 5.3988,
+  "priceSource": "provider, at pod creation"
+}

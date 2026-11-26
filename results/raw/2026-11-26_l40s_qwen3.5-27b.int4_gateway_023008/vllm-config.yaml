@@ -1,0 +1,14 @@
+# Qwen3.5-27B, int4. GPTQ 4-bit weights. The language model alone is ~15 GB; the checkpoint also carries unquantized parts (vision encoder, MTP head), which --language-model-only leaves out.
+#
+#   vllm serve --config serving/configs/qwen3.5-27b.int4.yaml --port 8000
+#
+# Flag reference: https://docs.vllm.ai/en/latest/configuration/serve_args.html
+# Model recipe:   https://recipes.vllm.ai/Qwen/Qwen3.5-27B
+model: Qwen/Qwen3.5-27B-GPTQ-Int4
+language-model-only: true
+reasoning-parser: qwen3
+default-chat-template-kwargs: '{"enable_thinking": false}'
+max-model-len: 8192
+gpu-memory-utilization: 0.92
+max-num-seqs: 128
+seed: 0

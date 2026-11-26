@@ -1,0 +1,45 @@
+name: gpu
+model: Qwen/Qwen3.5-27B-FP8
+target: http://127.0.0.1:8000
+tokenizeUrl: http://127.0.0.1:8000
+metricsUrl: http://127.0.0.1:8000/metrics
+readyUrl: http://127.0.0.1:8000/health
+scenarios:
+  - chat
+  - rag
+  - longgen
+scenarioDir: bench/scenarios
+ladder:
+  concurrency:
+    - 1
+    - 2
+    - 4
+    - 8
+    - 16
+    - 32
+    - 64
+    - 128
+  stopAfterViolations: 2
+openLoop:
+  fractions:
+    - 0.25
+    - 0.5
+    - 0.75
+    - 0.9
+point:
+  warmupSeconds: 30
+  warmupRequests: 20
+  maxRequests: 300
+  maxSeconds: 90
+  minRequests: 30
+  cooldownSeconds: 5
+  requestTimeoutSeconds: 600
+extraBody:
+  chat_template_kwargs:
+    enable_thinking: false
+hooks:
+  beforeScenario: infra/serve.sh restart
+client:
+  maxInflight: 4096
+  maxEventLoopUtilization: 0.8
+seed: 1

@@ -1,0 +1,35 @@
+{
+  "scenario": "longgen",
+  "pattern": "rate",
+  "value": 0.135,
+  "seed": 4090903632,
+  "startedAt": "2026-11-25T23:51:25.027Z",
+  "wallMs": 155835,
+  "warmupEndMs": 30000,
+  "requests": {
+    "total": 17,
+    "warmup": 5,
+    "measured": 12
+  },
+  "client": {
+    "eventLoopUtilization": 0.005,
+    "cpuPercent": 0.6,
+    "dropped": 0,
+    "valid": true
+  },
+  "slo": {
+    "ttftP95Ms": 1000,
+    "tpotP95Ms": 50,
+    "maxErrorRate": 0.005
+  },
+  "quick": {
+    "measured": 12,
+    "errors": 0,
+    "errorRate": 0,
+    "ttftP95": 199.3775,
+    "tpotP95": 42.601596096096095,
+    "reqPerS": 0.099596484841664,
+    "outputTokPerS": 99.596484841664,
+    "sloOk": true
+  }
+}
