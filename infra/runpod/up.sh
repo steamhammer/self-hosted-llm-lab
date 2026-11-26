@@ -8,14 +8,17 @@
 #   --max-price USD  delete the pod at once if RunPod bills more per hour (default 1.00)
 #   --price USD      only if you want to record a price by hand; normally the price RunPod
 #                    reports on creation is recorded and infra/fetch.sh writes it into the results
-#   --job NAME       rehearsal (default) | gpu-session
-#   --configs LIST   for gpu-session: comma-separated serving/configs names
+#   --job NAME       rehearsal (default) | gpu-session | eval-session (experiment 2 quality)
+#   --configs LIST   for gpu-session and eval-session: comma-separated serving/configs names
 #   --plan FILE      for gpu-session: plan to run (default bench/plans/gpu.yaml)
 #   --scenarios LIST override the plan's scenarios, e.g. chat,rag
 #   --no-gateway     gpu-session: skip the pass through the gateway (saves ~30 min)
+#   --matrix-configs LIST  eval-session: configs that also get the wide open-loop chat matrix
+#   --eval-limit N   eval-session rehearsal: first N questions of every task
 #   --label TAG      default <gpu>_<job> or <gpu>_<config>
 #   --cloud TYPE     SECURE (default: datacenter hosts, reliable image pulls) | COMMUNITY
-#   --disk GB        container disk for model weights and caches (default 40, gpu-session 80)
+#   --disk GB        container disk for model weights and caches (default 40; sessions: 30 GB
+#                    plus a rough size per config)
 #   --max-min N      hard runtime cap in minutes (default: the plan's worst-case estimate + 10% + 15)
 #   --keep-alive     keep the pod after the job (still capped by --max-min)
 #   --dry-run        print the estimate and the command with secrets redacted, create nothing
@@ -38,6 +41,8 @@ while (($#)); do
     --configs) CONFIGS="$2"; shift 2 ;;
     --plan) PLAN="$2"; shift 2 ;;
     --scenarios) SCENARIOS="$2"; shift 2 ;;
+    --matrix-configs) MATRIX_CONFIGS="$2"; shift 2 ;;
+    --eval-limit) EVAL_LIMIT="$2"; shift 2 ;;
     --no-gateway) GATEWAY_PASS=0; shift ;;
     --label) USER_LABEL="$2"; shift 2 ;;
     --cloud) CLOUD="$2"; shift 2 ;;
@@ -45,12 +50,13 @@ while (($#)); do
     --max-min) MAX_MIN="$2"; shift 2 ;;
     --keep-alive) KEEP_ALIVE=1; shift ;;
     --dry-run) DRY=1; shift ;;
-    -h | --help) sed -n '2,24p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,28p' "$0"; exit 0 ;;
     *) die "unknown option $1 (see --help)" ;;
   esac
 done
 [[ -n "$GPUS" ]] || die "--gpu is required (see --help)"
-[[ "$JOB" != gpu-session || -n "${CONFIGS:-}" ]] || die "--job gpu-session needs --configs"
+[[ "$JOB" != gpu-session && "$JOB" != eval-session || -n "${CONFIGS:-}" ]] ||
+  die "--job $JOB needs --configs"
 # Every config's weights stay on the container disk for the whole session, so the default
 # disk grows with the configs: 30 GB for the image and caches plus a rough size per model.
 weights_gb() {
@@ -65,10 +71,13 @@ weights_gb() {
   done
   echo "$total"
 }
-[[ -n "$DISK" ]] || if [[ "$JOB" == gpu-session ]]; then DISK=$((30 + $(weights_gb "$CONFIGS"))); else DISK=40; fi
+[[ -n "$DISK" ]] || if [[ "$JOB" == gpu-session || "$JOB" == eval-session ]]; then
+  DISK=$((30 + $(weights_gb "$CONFIGS")))
+else DISK=40; fi
 
 # The cap comes from the plan unless given: a cap below the plan's length would cut the run.
-EST="$(GATEWAY_PASS="${GATEWAY_PASS:-1}" plan_estimate "$JOB" "${PLAN:-}" "${CONFIGS:-}" "${SCENARIOS:-}")"
+[[ "$JOB" != eval-session ]] || GATEWAY_PASS="${GATEWAY_PASS:-0}" # the wide matrix is direct only
+EST="$(MATRIX_CONFIGS="${MATRIX_CONFIGS:-}" GATEWAY_PASS="${GATEWAY_PASS:-1}" plan_estimate "$JOB" "${PLAN:-}" "${CONFIGS:-}" "${SCENARIOS:-}")"
 if [[ -n "$MAX_MIN" ]]; then
   MAX_RUNTIME_MIN="$MAX_MIN"
   ((MAX_MIN >= EST)) || log "WARNING: --max-min $MAX_MIN is below the worst-case estimate of ${EST}m"
@@ -80,6 +89,7 @@ PROVIDER=runpod
 unset GPU_PRICE_PER_HOUR_USD
 [[ -z "$PRICE" ]] || GPU_PRICE_PER_HOUR_USD="$PRICE"
 export JOB MAX_RUNTIME_MIN KEEP_ALIVE PROVIDER CONFIGS="${CONFIGS:-}" PLAN="${PLAN:-}" SCENARIOS="${SCENARIOS:-}" GATEWAY_PASS="${GATEWAY_PASS:-}"
+export MATRIX_CONFIGS="${MATRIX_CONFIGS:-}" EVAL_LIMIT="${EVAL_LIMIT:-}"
 [[ -z "${GPU_PRICE_PER_HOUR_USD:-}" ]] || export GPU_PRICE_PER_HOUR_USD
 
 log "job $JOB, worst case ≈ ${EST}m of work, cap ${MAX_RUNTIME_MIN}m (+ image pull, billed too)," \
@@ -93,7 +103,7 @@ for raw in "${GPU_LIST[@]}"; do
   TAG="$(printf '%s' "$GPU" | tr '[:upper:]-' '[:lower:] ' | sed -E 's/nvidia|geforce|generation//g; s/[^a-z0-9]+//g')"
   if [[ -n "$USER_LABEL" ]]; then
     LABEL="$USER_LABEL"
-  elif [[ "$JOB" == gpu-session && "${CONFIGS:-}" != *,* ]]; then
+  elif [[ ("$JOB" == gpu-session || "$JOB" == eval-session) && "${CONFIGS:-}" != *,* ]]; then
     LABEL="${TAG}_${CONFIGS}"
   else
     LABEL="${TAG}_${JOB}"

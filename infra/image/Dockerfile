@@ -58,6 +58,18 @@ ARG LAB_GIT_SHA=unknown
 RUN PIP_BREAK_SYSTEM_PACKAGES=1 python3 -m pip install --no-cache-dir --no-deps --force-reinstall \
       --index-url https://download.pytorch.org/whl/cu129 "torchcodec==0.16.0" \
  && python3 -c "import torchcodec.decoders; print('torchcodec', torchcodec.__version__, 'ok')"
+# Experiment 2 quality runs (bench/eval, docs/adr/0007): lm-eval in its own venv, so its
+# datasets/evaluate pins cannot touch vLLM's packages. The task datasets and IFEval's NLTK data
+# are baked in, so a pod spends no paid minutes downloading them. Version as in bench/pyproject.toml.
+ARG LM_EVAL_VERSION=0.4.13
+ENV HF_DATASETS_CACHE=/opt/lab-eval/hf-datasets \
+    NLTK_DATA=/opt/lab-eval/nltk_data
+RUN python3 -m pip install --no-cache-dir uv \
+ && uv venv /opt/lab-eval --python python3 \
+ && uv pip install --no-cache --python /opt/lab-eval/bin/python "lm-eval[api,ifeval]==${LM_EVAL_VERSION}" \
+ && /opt/lab-eval/bin/python -c "import nltk; nltk.download('punkt_tab', download_dir='/opt/lab-eval/nltk_data')" \
+ && /opt/lab-eval/bin/python -c "from lm_eval.tasks import TaskManager, get_task_dict; \
+get_task_dict(['gsm8k_cot_llama', 'mmlu_pro', 'ifeval'], TaskManager()); print('eval datasets cached')"
 # Official Node.js binaries need only glibc >= 2.28, which the vLLM (Ubuntu) base has.
 COPY --from=node /usr/local/bin/node /usr/local/bin/node
 COPY --from=rclone /usr/local/bin/rclone /usr/local/bin/rclone

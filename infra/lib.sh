@@ -149,6 +149,7 @@ PY
 # the provider's pod settings, which is why every key is dedicated, scoped and revocable.
 LAB_POD_VARS=(JOB LABEL LAB_IMAGE MAX_RUNTIME_MIN KEEP_ALIVE SYNC_INTERVAL_S
   CONFIGS PLAN SCENARIOS GATEWAY_PASS CROSSCHECK VLLM_CONFIG
+  EVAL_LIMIT EVAL_CONCURRENCY MATRIX_CONFIGS MATRIX_PLAN
   PROVIDER GPU_PRICE_PER_HOUR_USD HF_TOKEN
   R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET R2_ENDPOINT RESULTS_PREFIX)
 
@@ -202,6 +203,12 @@ plan_estimate() {
 import math, os, re, sys
 args = sys.argv[1:] + [""] * 4
 job, plan, configs, override = args[:4]
+eval_configs = [c for c in configs.split(",") if c.strip()] if job == "eval-session" else []
+if job == "eval-session":
+    # Quality runs take EVAL_MIN_PER_CONFIG minutes each (default 30: the full sets, ~1M output
+    # tokens, on a 27B at concurrency 64, with margin); MATRIX_CONFIGS add their matrix.
+    configs = os.environ.get("MATRIX_CONFIGS", "")
+    plan = os.environ.get("MATRIX_PLAN", "") or "bench/plans/gpu-wide-openloop.yaml"
 if job == "rehearsal":
     plan, nconf = plan or "bench/plans/rehearsal.yaml", 1
 else:
@@ -231,6 +238,10 @@ scenarios = [s for s in override.split(",") if s.strip()] or items(text, "scenar
 first_start, crosscheck = 300, 120  # model download + first start; one bench point
 gateway = scenario_s("chat") if os.environ.get("GATEWAY_PASS", "1") != "0" else 0
 total = nconf * (first_start + sum(scenario_s(s) for s in scenarios) + gateway + crosscheck)
+if job == "eval-session":
+    per_eval = float(os.environ.get("EVAL_MIN_PER_CONFIG", "30")) * 60
+    matrix = total if configs.strip() else 0
+    total = len(eval_configs) * (first_start + per_eval) + matrix
 print(math.ceil(total / 60))
 PY
 }

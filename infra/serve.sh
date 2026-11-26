@@ -7,6 +7,7 @@
 #      LAB_WORK        directory for the pid file (default /tmp/lab-work)
 #      LAB_LOGS        directory for vllm.log (default $LAB_WORK)
 #      VLLM_START_TIMEOUT_S   default 1800 (first start downloads the model)
+#      VLLM_EXTRA_ARGS extra flags after the config, e.g. "--max-model-len 16384" (eval runs)
 #      LAB_FAKE_VLLM=1 start the mock upstream in simulation mode instead (tests without a GPU)
 #
 # Used by bootstrap.sh and as the plans' beforeScenario hook (fresh server per scenario).
@@ -31,10 +32,13 @@ start() {
     MOCK_SIM=1 PORT=$PORT setsid node mock-upstream/src/main.ts >>"$LOGS/vllm.log" 2>&1 &
   else
     : "${VLLM_CONFIG:?VLLM_CONFIG is not set}"
-    setsid vllm serve --config "$VLLM_CONFIG" --port "$PORT" >>"$LOGS/vllm.log" 2>&1 &
+    local extra=()
+    read -r -a extra <<<"${VLLM_EXTRA_ARGS:-}"
+    setsid vllm serve --config "$VLLM_CONFIG" --port "$PORT" ${extra[@]+"${extra[@]}"} \
+      >>"$LOGS/vllm.log" 2>&1 &
   fi
   echo $! >"$PID_FILE"
-  log "vLLM starting (pid $(cat "$PID_FILE"), config ${VLLM_CONFIG:-mock}); log: $LOGS/vllm.log"
+  log "vLLM starting (pid $(cat "$PID_FILE"), config ${VLLM_CONFIG:-mock} ${VLLM_EXTRA_ARGS:-}); log: $LOGS/vllm.log"
   if ! wait_http "http://127.0.0.1:$PORT/health" "${VLLM_START_TIMEOUT_S:-1800}" "$(cat "$PID_FILE")"; then
     tail -n 60 "$LOGS/vllm.log" || true
     die "vLLM did not become healthy"

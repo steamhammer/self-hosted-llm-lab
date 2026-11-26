@@ -76,6 +76,22 @@ STATUS=succeeded
 grep -q "not running\|instead of rerunning" "$T/restart.log" || RC=99
 expect restart 0 succeeded 2
 
+# eval-session: vLLM (the mock) per config, the eval runner against it, a failed config skipped.
+cat >"$T/fake_eval.py" <<'PY'
+#!/usr/bin/env python3
+import json, pathlib, sys, urllib.request
+args = dict(zip(sys.argv[2::2], sys.argv[3::2]))
+urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=5)
+out = pathlib.Path(args["--out"])
+out.mkdir(parents=True, exist_ok=True)
+(out / "eval.json").write_text(json.dumps({"model": args["--model"], "limit": args.get("--limit")}))
+PY
+chmod +x "$T/fake_eval.py"
+run eval-session JOB=eval-session CONFIGS=no-such-config,qwen3.5-0.8b.rehearsal \
+  LAB_FAKE_VLLM=1 EVAL_PY="$T/fake_eval.py" EVAL_LIMIT=5
+grep -q '"limit": "5"' "$T"/remote/*/results/*_eval_*/eval.json 2>/dev/null || RC=98
+expect eval-session 1 failed 1
+
 # KEEP_ALIVE holds the machine until the cap, then deletes it.
 run keep-alive JOB="$T/jobs/ok.sh" KEEP_ALIVE=1 MAX_RUNTIME_S=4 CLEANUP_GRACE_S=30
 expect keep-alive 0 succeeded 1

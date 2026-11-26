@@ -1,0 +1,26 @@
+# Offline task for tests: three arithmetic questions from a local file, GSM8K-style extraction.
+task: lab_toy
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: toy.jsonl
+test_split: test
+output_type: generate_until
+doc_to_text: "{{question}}"
+doc_to_target: "{{answer}}"
+generation_kwargs:
+  until: ["Q:"]
+  max_gen_toks: 16
+filter_list:
+  - name: flexible-extract
+    filter:
+      - function: regex
+        group_select: -1
+        regex_pattern: (-?[0-9]+)
+      - function: take_first
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+metadata:
+  version: 1.0
