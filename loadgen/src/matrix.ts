@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { gzipSync } from "node:zlib";
-import { Agent, request } from "undici";
+import { Agent, type Dispatcher, EnvHttpProxyAgent, request } from "undici";
 import { stringify } from "yaml";
 import type { Plan, Scenario } from "./plan.ts";
 import { loadScenario } from "./plan.ts";
@@ -91,13 +91,24 @@ export function authHeaders(
   return headers;
 }
 
+/**
+ * Connection pool for the run. Behind an HTTP(S) proxy (HTTPS_PROXY / HTTP_PROXY, e.g. a sandbox
+ * that only reaches allow-listed hosts), requests go through it; NO_PROXY still sends localhost
+ * (vLLM, the gateway, the mock) directly. undici ignores these variables unless asked.
+ */
+export function makeDispatcher(env: NodeJS.ProcessEnv = process.env): Dispatcher {
+  const opts = { connections: null, keepAliveTimeout: 30_000 };
+  const proxied = ["HTTPS_PROXY", "https_proxy", "HTTP_PROXY", "http_proxy"].some((k) => env[k]);
+  return proxied ? new EnvHttpProxyAgent(opts) : new Agent(opts);
+}
+
 /** Runs the whole plan: for each scenario a concurrency ladder, then open-loop rates. */
 export async function runMatrix(opts: MatrixOptions): Promise<PointSummary[]> {
   const { plan, outDir, label } = opts;
   const log = opts.log ?? ((s: string) => process.stderr.write(`${s}\n`));
   const url = new URL(plan.chatPath, plan.target).toString();
   const headers = authHeaders(plan);
-  const dispatcher = new Agent({ connections: null, keepAliveTimeout: 30_000 });
+  const dispatcher = makeDispatcher();
   await mkdir(outDir, { recursive: true });
 
   const calibration: Calibration =

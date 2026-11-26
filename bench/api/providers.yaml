@@ -4,6 +4,8 @@
 #   https://openrouter.ai/api/v1/models/qwen/qwen3.5-9b/endpoints
 # Prices in USD per 1M tokens on the snapshot date. "unknown" = the provider does not disclose it.
 # Picked to span the quantizations on offer (bf16 / fp8 / fp4 / undisclosed) plus the cheapest.
+# Re-checked 2026-11-26 22:45 UTC before the first run: Novita no longer serves 27B, and every
+# remaining 27B endpoint except Alibaba's (undisclosed) is FP8, so the 27B set has no BF16 API.
 snapshot: 2026-11-26
 endpoints:
   - id: alibaba_27b
@@ -18,12 +20,12 @@ endpoints:
     quantization: fp8
     input: 0.26
     output: 2.60
-  - id: novita-bf16_27b
+  - id: siliconflow-fp8_27b
     model: qwen/qwen3.5-27b
-    provider: novita/bf16
-    quantization: bf16
-    input: 0.30
-    output: 2.40
+    provider: siliconflow/fp8
+    quantization: fp8
+    input: 0.25
+    output: 2.00
   - id: darkbloom-fp4_9b
     model: qwen/qwen3.5-9b
     provider: darkbloom/fp4
@@ -42,5 +44,13 @@ endpoints:
     quantization: unknown
     input: 0.17
     output: 0.25
-# The closed reference model (one, same price class as 27B) is added here once picked:
-# id, model, provider: null (OpenRouter's default routing), quantization: n/a, prices.
+  # Closed reference model of the 27B price class. Picked among closed models at $0.2–0.3 in and
+  # $1.2–2.5 out whose reasoning can be switched off (Gemini 3.5 Flash-Lite and 3.8 Flash reject
+  # reasoning effort "none"). Pinned to Google AI Studio, its standard (not flex/priority) tier.
+  # https://openrouter.ai/api/v1/models/google/gemini-3.1-flash-lite/endpoints
+  - id: gemini-3.1-flash-lite_closed
+    model: google/gemini-3.1-flash-lite
+    provider: google-ai-studio
+    quantization: n/a
+    input: 0.25
+    output: 1.50

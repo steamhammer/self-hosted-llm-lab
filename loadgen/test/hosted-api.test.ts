@@ -4,11 +4,11 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
-import { Agent } from "undici";
+import { Agent, EnvHttpProxyAgent } from "undici";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { RequestRecord } from "../src/client.ts";
 import { sendStreaming } from "../src/client.ts";
-import { authHeaders, runMatrix } from "../src/matrix.ts";
+import { authHeaders, makeDispatcher, runMatrix } from "../src/matrix.ts";
 import { PlanSchema } from "../src/plan.ts";
 
 /**
@@ -126,6 +126,14 @@ describe("hosted API target", () => {
     expect(limited.api).toBeUndefined();
     const unauth = await sendStreaming(url(), req(), { dispatcher, timeoutMs: 5000 });
     expect(unauth.error).toBe("http_401");
+  });
+
+  it("goes through an HTTP(S) proxy only when one is configured", async () => {
+    const direct = makeDispatcher({});
+    const proxied = makeDispatcher({ HTTPS_PROXY: "http://127.0.0.1:3128" });
+    expect(direct).toBeInstanceOf(Agent);
+    expect(proxied).toBeInstanceOf(EnvHttpProxyAgent);
+    await Promise.all([direct.close(), proxied.close()]);
   });
 
   it("refuses to start without the key and never stores it", () => {
