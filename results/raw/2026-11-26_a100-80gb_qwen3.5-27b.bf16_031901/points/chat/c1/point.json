@@ -1,0 +1,35 @@
+{
+  "scenario": "chat",
+  "pattern": "concurrency",
+  "value": 1,
+  "seed": 1531688845,
+  "startedAt": "2026-11-26T03:25:11.945Z",
+  "wallMs": 305611,
+  "warmupEndMs": 35990,
+  "requests": {
+    "total": 34,
+    "warmup": 4,
+    "measured": 30
+  },
+  "client": {
+    "eventLoopUtilization": 0.005,
+    "cpuPercent": 0.7,
+    "dropped": 0,
+    "valid": true
+  },
+  "slo": {
+    "ttftP95Ms": 1000,
+    "tpotP95Ms": 50,
+    "maxErrorRate": 0.005
+  },
+  "quick": {
+    "measured": 30,
+    "errors": 0,
+    "errorRate": 0,
+    "ttftP95": 176.838,
+    "tpotP95": 34.59390392156863,
+    "reqPerS": 0.11126717362463573,
+    "outputTokPerS": 28.484396447906747,
+    "sloOk": true
+  }
+}

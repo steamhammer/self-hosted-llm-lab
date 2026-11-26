@@ -1,0 +1,20 @@
+{
+  "session": "20261126T0319Z_a100_qwen3.5-27b-bf16",
+  "label": "a100_qwen3.5-27b-bf16",
+  "job": "gpu-session",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-11-26T03:19:00Z",
+  "finishedAt": "2026-11-26T05:46:16Z",
+  "durationS": 8836,
+  "provider": "runpod",
+  "machineId": "l91jq4wbft7j6t",
+  "gpus": [
+    "NVIDIA A100-SXM4-80GB"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "9b45fecfd4ad0fb35120531de552d9b72bd5a2ca",
+  "pricePerHourUsd": 2.19,
+  "estimatedCostUsd": 5.3752,
+  "priceSource": "provider, at pod creation"
+}
