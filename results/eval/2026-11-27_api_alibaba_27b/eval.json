@@ -1,0 +1,46 @@
+{
+  "label": "api_alibaba_27b",
+  "model": "qwen/qwen3.5-27b",
+  "url": "https://openrouter.ai/api/v1/chat/completions",
+  "extraBody": {
+    "provider": {
+      "only": [
+        "alibaba"
+      ],
+      "allow_fallbacks": false
+    },
+    "reasoning": {
+      "effort": "none"
+    }
+  },
+  "keyEnv": "OPENROUTER_API_KEY",
+  "tasks": [
+    "gsm8k_cot_llama",
+    "mmlu_pro",
+    "ifeval"
+  ],
+  "limit": null,
+  "mmluProSample": "bench/eval/mmlu_pro_sample.json",
+  "concurrency": 8,
+  "samples": {
+    "gsm8k_cot_llama": 2638,
+    "mmlu_pro_biology": 100,
+    "mmlu_pro_business": 100,
+    "mmlu_pro_chemistry": 100,
+    "mmlu_pro_computer_science": 100,
+    "mmlu_pro_economics": 100,
+    "mmlu_pro_engineering": 100,
+    "mmlu_pro_health": 100,
+    "mmlu_pro_history": 100,
+    "mmlu_pro_law": 100,
+    "mmlu_pro_math": 100,
+    "mmlu_pro_other": 100,
+    "mmlu_pro_philosophy": 100,
+    "mmlu_pro_physics": 100,
+    "mmlu_pro_psychology": 100,
+    "ifeval": 541
+  },
+  "lmEvalVersion": "0.4.13",
+  "startedAtUtc": "2026-11-27T10:04:11+00:00",
+  "wallSeconds": 6217.9
+}
