@@ -1,0 +1,36 @@
+{
+  "label": "a40_qwen3.5-0.8b.rehearsal",
+  "model": "Qwen/Qwen3.5-0.8B",
+  "url": "http://127.0.0.1:8000/v1/chat/completions",
+  "extraBody": {},
+  "keyEnv": null,
+  "tasks": [
+    "gsm8k_cot_llama",
+    "mmlu_pro",
+    "ifeval"
+  ],
+  "limit": 20,
+  "mmluProSample": null,
+  "concurrency": 64,
+  "samples": {
+    "gsm8k_cot_llama": 40,
+    "mmlu_pro_biology": 20,
+    "mmlu_pro_business": 20,
+    "mmlu_pro_chemistry": 20,
+    "mmlu_pro_computer_science": 20,
+    "mmlu_pro_economics": 20,
+    "mmlu_pro_engineering": 20,
+    "mmlu_pro_health": 20,
+    "mmlu_pro_history": 20,
+    "mmlu_pro_law": 20,
+    "mmlu_pro_math": 20,
+    "mmlu_pro_other": 20,
+    "mmlu_pro_philosophy": 20,
+    "mmlu_pro_physics": 20,
+    "mmlu_pro_psychology": 20,
+    "ifeval": 20
+  },
+  "lmEvalVersion": "0.4.13",
+  "startedAtUtc": "2026-11-27T15:34:33+00:00",
+  "wallSeconds": 80.0
+}
