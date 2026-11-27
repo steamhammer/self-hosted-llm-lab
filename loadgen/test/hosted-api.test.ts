@@ -46,6 +46,9 @@ function fakeRouter(seen: Seen[]): Server {
     const base = { id: "gen-123", provider: "FakeInfra", object: "chat.completion.chunk" };
     if (!reasoningOff) send({ ...base, choices: [{ delta: { reasoning: "hmm" } }] });
     for (const w of ["a", "b", "c", "d"]) send({ ...base, choices: [{ delta: { content: w } }] });
+    // Gemini-style thought signature: present even with reasoning off, not reasoning text
+    const signature = [{ type: "reasoning.encrypted", data: "x", index: 0 }];
+    send({ ...base, choices: [{ delta: { content: "", reasoning_details: signature } }] });
     send({
       ...base,
       choices: [],

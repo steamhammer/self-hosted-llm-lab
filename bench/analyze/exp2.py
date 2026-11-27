@@ -122,6 +122,15 @@ def breakeven(runs: list[Path], providers: Path = PROVIDERS) -> pd.DataFrame:
 # --------------------------------------------------------------------------------------- api
 
 
+def reasoning_leaks(api: pd.DataFrame) -> int:
+    if not len(api):
+        return 0
+    empty = pd.Series(float("nan"), index=api.index)
+    tokens = api.get("reasoningTokens", empty)
+    chunks = api.get("reasoningChunks", empty)
+    return int((tokens.fillna(0).gt(0) | (tokens.isna() & chunks.gt(0))).sum())
+
+
 def api_points(run_dir: Path) -> pd.DataFrame:
     run = load_run(run_dir)
     env = json.loads((run_dir / "env.json").read_text()) if (run_dir / "env.json").exists() else {}
@@ -142,7 +151,14 @@ def api_points(run_dir: Path) -> pd.DataFrame:
             if ep and out_tokens
             else float("nan")
         )
-        tp = ok.apply(request_tpot, axis=1) if len(ok) else pd.Series(dtype=float)
+        tp = (
+            # ok rows have no error; request_tpot wants None there, not pandas' NaN
+            pd.to_numeric(
+                ok.assign(error=None).apply(request_tpot, axis=1), errors="coerce"
+            ).dropna()
+            if len(ok)
+            else pd.Series(dtype=float)
+        )
         rows.append(
             {
                 "run": run.meta.get("label"),
@@ -158,9 +174,9 @@ def api_points(run_dir: Path) -> pd.DataFrame:
                 "tpot_p50": round(tp.quantile(0.5), 2) if len(tp) else None,
                 "tpot_p95": round(tp.quantile(0.95), 2) if len(tp) else None,
                 "output_tokens_mean": round(out_tokens / len(ok), 1) if len(ok) else None,
-                "reasoning_leak": int(
-                    (api.get("reasoningChunks", pd.Series(dtype=float)) > 0).sum()
-                ),
+                # billed reasoning tokens; chunk counts only where the router reports no tokens
+                # (records before the fix still count Gemini's encrypted thought signature)
+                "reasoning_leak": reasoning_leaks(api),
                 "providers_seen": ",".join(sorted(api["provider"].dropna().unique()))
                 if "provider" in api
                 else "",
@@ -326,8 +342,11 @@ def usage_summary(eval_dir: Path) -> dict:
     u = pd.read_json(f, lines=True)
     if not len(u):
         return {}
+    refused = int(u["refused"].fillna(False).astype(bool).sum()) if "refused" in u else 0
+    u = u[~u["refused"].fillna(False).astype(bool)] if "refused" in u else u
     return {
         "responses": len(u),
+        "refused": refused,
         "prompt_tokens": int(u["prompt_tokens"].fillna(0).sum()),
         "completion_tokens": int(u["completion_tokens"].fillna(0).sum()),
         "billed_usd": round(float(u["cost"].fillna(0).sum()), 4),

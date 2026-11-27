@@ -62,13 +62,25 @@ interface Chunk {
 
 const nonEmpty = (v: unknown) => typeof v === "string" && v.length > 0;
 
+/**
+ * Readable reasoning only. Gemini sends a `reasoning.encrypted` detail (its thought signature)
+ * even with thinking off; that is not reasoning text, so it counts neither as reasoning nor as a
+ * token. Its `usage.completion_tokens_details.reasoning_tokens` stays 0.
+ */
+function readableDetail(d: unknown): boolean {
+  const o = d as { type?: unknown; text?: unknown; summary?: unknown };
+  return o?.type !== "reasoning.encrypted" && (nonEmpty(o?.text) || nonEmpty(o?.summary));
+}
+
 function hasReasoning(c: Chunk): boolean {
-  return (c.choices ?? []).some(
-    (ch) =>
+  return (c.choices ?? []).some((ch) => {
+    const details = ch.delta?.reasoning_details;
+    return (
       nonEmpty(ch.delta?.reasoning_content) ||
       nonEmpty(ch.delta?.reasoning) ||
-      (Array.isArray(ch.delta?.reasoning_details) && ch.delta.reasoning_details.length > 0),
-  );
+      (Array.isArray(details) && details.some(readableDetail))
+    );
+  });
 }
 
 function hasToken(c: Chunk): boolean {

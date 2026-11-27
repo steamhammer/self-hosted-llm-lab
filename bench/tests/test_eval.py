@@ -22,11 +22,19 @@ sys.path.insert(0, str(EVAL))
 
 class FakeRouter(BaseHTTPRequestHandler):
     seen: ClassVar[list[dict]] = []
+    refuse: ClassVar[bool] = False
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["content-length"])))
         FakeRouter.seen.append({"auth": self.headers.get("authorization"), "body": body})
         question = body["messages"][-1]["content"]
+        if question == "1+1?" and FakeRouter.refuse:
+            msg = b'{"error":{"code":400,"message":"data_inspection_failed"}}'
+            self.send_response(400)
+            self.send_header("content-length", str(len(msg)))
+            self.end_headers()
+            self.wfile.write(msg)
+            return
         answer = {"2+4?": "The final answer is 6", "3+4?": "It is 8"}.get(question, "2")
         payload = {
             "id": "gen-1",
@@ -50,6 +58,7 @@ def server():
     srv = ThreadingHTTPServer(("127.0.0.1", 0), FakeRouter)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     FakeRouter.seen = []
+    FakeRouter.refuse = False
     yield f"http://127.0.0.1:{srv.server_address[1]}/v1/chat/completions"
     srv.shutdown()
 
@@ -93,3 +102,41 @@ def test_run_eval_end_to_end(server, tmp_path, monkeypatch):
     assert len(usage) == 3 and all(u["provider"] == "FakeInfra" for u in usage)
     meta = json.loads((out / "eval.json").read_text())
     assert meta["keyEnv"] == "FAKE_KEY" and "sk-test" not in (out / "eval.json").read_text()
+
+
+def test_refused_question_scores_wrong_and_is_logged(server, tmp_path, monkeypatch):
+    import lab_lm
+    import run_eval
+    from lm_eval.tasks import TaskManager
+
+    task_dir = tmp_path / "task"
+    shutil.copytree(FIXTURE, task_dir)
+    monkeypatch.chdir(task_dir)
+    real_tm = TaskManager
+    monkeypatch.setattr(
+        "lm_eval.evaluator.TaskManager", lambda *a, **k: real_tm(include_path=str(task_dir))
+    )
+    FakeRouter.refuse = True
+    out = tmp_path / "out"
+    args = [
+        "--url",
+        server,
+        "--model",
+        "m",
+        "--label",
+        "t",
+        "--out",
+        str(out),
+        "--tasks",
+        "lab_toy",
+    ]
+    assert run_eval.main([*args, "--concurrency", "1", "--cache", str(tmp_path / "c")]) == 0
+    scores = json.loads((out / "results.json").read_text())["results"]["lab_toy"]
+    assert scores["exact_match,flexible-extract"] == pytest.approx(
+        1 / 3
+    )  # 6 right, 8 wrong, refused
+    usage = [json.loads(line) for line in (out / "usage.jsonl").read_text().splitlines()]
+    assert sum(1 for u in usage if u.get("refused")) == 1
+    with gzip.open(out / "samples" / "lab_toy.jsonl.gz", "rt") as fh:
+        resps = [json.loads(line)["resps"][0][0] for line in fh]
+    assert lab_lm.REFUSED in resps

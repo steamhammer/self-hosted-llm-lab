@@ -78,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tasks", default=",".join(TASKS))
     ap.add_argument("--limit", type=int, help="rehearsal: first N questions of every task")
     ap.add_argument("--timeout", type=int, default=600)
+    ap.add_argument(
+        "--cache",
+        type=Path,
+        help="sqlite cache of responses: a re-run after a crash pays only for what is missing",
+    )
     args = ap.parse_args(argv)
 
     import lab_lm  # noqa: F401  (registers the "lab-chat" model)
@@ -87,7 +92,8 @@ def main(argv: list[str] | None = None) -> int:
     out = args.out or ROOT / "results" / "eval" / f"{datetime.now():%Y-%m-%d}_{args.label}"
     out.mkdir(parents=True, exist_ok=True)
     usage_log = out / "usage.jsonl"
-    usage_log.unlink(missing_ok=True)
+    if not args.cache:
+        usage_log.unlink(missing_ok=True)  # with a cache, a re-run appends to the same log
     os.environ["LAB_EVAL_EXTRA_BODY"] = args.extra_body
     os.environ["LAB_EVAL_USAGE_LOG"] = str(usage_log)
     if args.key_env:
@@ -119,6 +125,7 @@ def main(argv: list[str] | None = None) -> int:
         limit=args.limit,
         samples=samples,
         log_samples=True,
+        use_cache=str(args.cache) if args.cache else None,
         bootstrap_iters=0,  # intervals come from bench/analyze/quality.py, paired across runs
     )
     if results is None:
