@@ -1,0 +1,9 @@
+kind,endpoint,n,errors,p50_ms,p95_ms,min_ms
+ping,openrouter,50,0,45.2,99.2,40.3
+floor_ttft,alibaba_27b,30,0,523.0,566.5,492.0
+floor_ttft,deepinfra-fp8_27b,30,0,252.4,918.7,189.1
+floor_ttft,siliconflow-fp8_27b,30,0,641.5,3415.4,572.2
+floor_ttft,darkbloom-fp4_9b,30,0,66.0,204.3,54.9
+floor_ttft,deepinfra-bf16_9b,30,0,289.1,505.3,233.3
+floor_ttft,together_9b,30,0,198.9,242.6,184.6
+floor_ttft,gemini-3.1-flash-lite_closed,30,0,388.9,530.3,269.8

@@ -1,0 +1,11 @@
+run,set,n,accuracy,ci95
+2026-11-27_api_darkbloom-fp4_9b,gsm8k_cot_llama,1319,93.0,91.7–94.3
+2026-11-27_api_darkbloom-fp4_9b,ifeval,541,81.9,78.6–85.0
+2026-11-27_api_darkbloom-fp4_9b,mmlu_pro,1400,68.6,66.1–70.9
+2026-11-27_api_darkbloom-fp4_9b,mmlu_pro:quantitative,400,68.8,64.0–73.2
+2026-11-27_api_darkbloom-fp4_9b,mmlu_pro:knowledge,1000,68.5,65.6–71.3
+2026-11-27_api_darkbloom-fp4_9b_repeat,gsm8k_cot_llama,1319,93.2,91.8–94.5
+2026-11-27_api_darkbloom-fp4_9b_repeat,ifeval,541,82.6,79.3–85.8
+2026-11-27_api_darkbloom-fp4_9b_repeat,mmlu_pro,1400,68.4,66.0–70.8
+2026-11-27_api_darkbloom-fp4_9b_repeat,mmlu_pro:quantitative,400,67.2,62.5–71.8
+2026-11-27_api_darkbloom-fp4_9b_repeat,mmlu_pro:knowledge,1000,68.9,66.1–71.8
