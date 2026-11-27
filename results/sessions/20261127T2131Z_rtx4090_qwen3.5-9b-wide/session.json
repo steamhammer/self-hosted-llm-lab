@@ -1,0 +1,20 @@
+{
+  "session": "20261127T2131Z_rtx4090_qwen3.5-9b-wide",
+  "label": "rtx4090_qwen3.5-9b-wide",
+  "job": "gpu-session",
+  "status": "succeeded",
+  "exitCode": 0,
+  "startedAt": "2026-11-27T21:31:00Z",
+  "finishedAt": "2026-11-27T22:34:39Z",
+  "durationS": 3819,
+  "provider": "runpod",
+  "machineId": "wk79n84lpmic0e",
+  "gpus": [
+    "NVIDIA GeForce RTX 4090"
+  ],
+  "image": "ghcr.io/steamhammer/llm-lab:main",
+  "commit": "4f02623748dfb5ef6959b81a0217c7357baba3f8",
+  "pricePerHourUsd": 0.89,
+  "estimatedCostUsd": 0.9441,
+  "priceSource": "provider, at pod creation"
+}
