@@ -1,7 +1,7 @@
 # Benchmark methodology
 
-**Version:** 1.2 (frozen) · **Status:** 1.1 frozen 2026-11-24, before the first paid GPU run;
-§11 (experiment 2) added in 1.2 on 2026-11-26, before its first paid run.
+**Version:** 1.3 (frozen) · **Status:** 1.1 frozen 2026-11-24, before the first paid GPU run;
+§11 (experiment 2) added in 1.2 on 2026-11-26, before its first paid run; 1.3 changes analysis only.
 Every result in this repository is tagged with the methodology version it was measured under.
 Changes after the freeze go to the [changelog](#changelog) with a date and a reason.
 
@@ -261,6 +261,16 @@ U* = our $/1M output at capacity ÷ API $/1M output (scenario)
 U* is the share of time a rented GPU must run at capacity to cost the same as the API. Above 100%
 it never pays off. `bench/analyze/exp2.py breakeven` computes it from every run's `capacity.csv`.
 
+U* is reported for both capacities of §5: **closed loop** (concurrency ladder), the conservative
+figure, and **open loop** (Poisson rate sweep), closer to real traffic. The two can differ in either
+direction: on H100 FP8 chat, synchronized prefills push closed-loop TTFT over the SLO at c=32 while
+Poisson arrivals hold it at 9 req/s (about 2.3× the closed-loop throughput); on L40S and for rag,
+Poisson queueing breaks TTFT earlier than the ladder does. The `bound` column says whether a heavier
+point of the same sweep broke the SLO (`ceiling`) or not (`SLO never broke`): then capacity is only a
+lower bound and U* an upper bound ("at most"). A sweep can be widened past 90% with a plan such as
+[`bench/plans/gpu-wide-openloop.yaml`](../bench/plans/gpu-wide-openloop.yaml) (fractions 0.25–1.5).
+When a configuration is re-run, the latest run is used.
+
 ### 11.3 Quality
 
 - **Tool.** [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) 0.4.13,
@@ -318,3 +328,4 @@ results/eval/<date>_<label>/ or <session>/…_eval_<gpu>_<config>_<time>/
 | 2026-11-24 | 1.0 | Initial version, frozen | — |
 | 2026-11-24 | 1.1 | Own load generator (loadgen) instead of GuideLLM as the primary tool, `vllm bench serve` as cross-check (§4); open-loop rates as fractions of the ladder's best rate (§4.1); client check via event-loop utilization (§4.3); steady-state throughput window (§5); word-based prompts calibrated with `/tokenize` (§3.1); raw layout (§10) | Same tool and output format against vLLM, gateway, mock and llama.cpp; per-request raw data for our own percentiles and goodput; no dependency on third-party output formats. Changed before any paid run, so no results are affected. |
 | 2026-11-26 | 1.2 | §11: hosted APIs through OpenRouter, break-even load U*, quality with lm-evaluation-harness; §1 no longer lists quality as a non-goal | Experiment 2. Added before its first paid run; §1–§10 unchanged, so experiment 1 results are unaffected. |
+| 2026-11-27 | 1.3 | §11.2: U* for both closed- and open-loop capacity, with a `bound` flag; re-run of H100 FP8 chat with open-loop fractions 0.25–1.5 | The standard sweep (25–90%) never broke the SLO on H100 FP8 chat, so its open-loop capacity was only a lower bound; the wide re-run found the ceiling at 8.94 req/s, 2.3× the closed-loop throughput. Analysis only: no measurement procedure changed, earlier runs stay valid |

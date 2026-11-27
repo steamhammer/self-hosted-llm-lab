@@ -37,7 +37,7 @@ JSON merged into every request (provider pinning, reasoning off) and a log of to
 provider per response. Every question's response is kept, so comparisons are paired.
 
 **Analysis.** [`bench/analyze/exp2.py`](../../bench/analyze/exp2.py): break-even load U* from our
-`capacity.csv` and the price file; API latency, errors and billed cost; accuracy with bootstrap
+`capacity.csv` (closed- and open-loop capacity side by side, methodology §11.2) and the price file; API latency, errors and billed cost; accuracy with bootstrap
 intervals and paired differences against our BF16 with McNemar's exact test.
 
 ## Alternatives considered

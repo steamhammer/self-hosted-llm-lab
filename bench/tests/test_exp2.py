@@ -29,10 +29,24 @@ def test_breakeven_matches_models_and_flags_never(tmp_path):
     (run / "run.json").write_text(json.dumps({"label": "4090", "model": "Qwen/Qwen3.5-9B"}))
     pd.DataFrame(
         [
-            {"scenario": "chat", "pattern": "concurrency", "usd_per_1m_output": 0.23},
-            {"scenario": "chat", "pattern": "rate", "usd_per_1m_output": 0.1},
+            {
+                "scenario": "chat",
+                "pattern": "concurrency",
+                "capacity": 8,
+                "usd_per_1m_output": 0.23,
+            },
+            {"scenario": "chat", "pattern": "rate", "capacity": 2.0, "usd_per_1m_output": 0.1},
         ]
     ).to_csv(run / "analysis" / "capacity.csv", index=False)
+    # closed loop broke the SLO above its capacity; the open-loop sweep never did
+    pd.DataFrame(
+        [
+            {"scenario": "chat", "pattern": "concurrency", "value": 8, "slo_ok": True},
+            {"scenario": "chat", "pattern": "concurrency", "value": 16, "slo_ok": False},
+            {"scenario": "chat", "pattern": "rate", "value": 1.0, "slo_ok": True},
+            {"scenario": "chat", "pattern": "rate", "value": 2.0, "slo_ok": True},
+        ]
+    ).to_csv(run / "analysis" / "summary.csv", index=False)
     providers = tmp_path / "p.yaml"
     providers.write_text(
         "snapshot: 2026-11-26\nendpoints:\n"
@@ -41,11 +55,17 @@ def test_breakeven_matches_models_and_flags_never(tmp_path):
         "  - {id: dear, model: qwen/qwen3.5-9b, provider: z, quantization: bf16, input: 0.01, output: 0.1}\n"
     )
     df = exp2.breakeven([run], providers)
-    assert list(df["api"]) == ["cheap", "dear"]  # 27B endpoint skipped, rate row ignored
-    cheap = df[df["api"] == "cheap"].iloc[0]
+    assert list(df["api"]) == ["cheap", "dear", "cheap", "dear"]  # 27B endpoint skipped
+    closed = df[df["loop"] == "closed"]
+    cheap = closed[closed["api"] == "cheap"].iloc[0]
     assert cheap["api_usd_per_1m"] == pytest.approx(0.29)
     assert cheap["u_star"] == pytest.approx(0.23 / 0.29, abs=1e-3)
-    assert df[df["api"] == "dear"].iloc[0]["pays_off"] == "never"
+    assert cheap["bound"] == "ceiling"
+    assert closed[closed["api"] == "dear"].iloc[0]["pays_off"] == "never"
+    open_cheap = df[(df["loop"] == "open") & (df["api"] == "cheap")].iloc[0]
+    assert open_cheap["u_star"] == pytest.approx(0.1 / 0.29, abs=1e-3)
+    assert open_cheap["bound"] == "SLO never broke"
+    assert open_cheap["pays_off"] == "above 34% load at most"
 
 
 def test_breakeven_keeps_the_latest_rerun(tmp_path):
@@ -55,7 +75,14 @@ def test_breakeven_keeps_the_latest_rerun(tmp_path):
         (run / "analysis").mkdir(parents=True)
         (run / "run.json").write_text(json.dumps({"label": "h100", "model": "Qwen/Qwen3.5-9B"}))
         pd.DataFrame(
-            [{"scenario": "chat", "pattern": "concurrency", "usd_per_1m_output": cost}]
+            [
+                {
+                    "scenario": "chat",
+                    "pattern": "concurrency",
+                    "capacity": 16,
+                    "usd_per_1m_output": cost,
+                }
+            ]
         ).to_csv(run / "analysis" / "capacity.csv", index=False)
         runs.append(run)
     providers = tmp_path / "p.yaml"

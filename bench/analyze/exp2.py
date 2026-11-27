@@ -82,41 +82,72 @@ def our_runs(paths: list[Path] | None) -> list[Path]:
     return found
 
 
+LOOP = {"concurrency": "closed", "rate": "open"}
+
+
+def ceiling_found(summary: pd.DataFrame, scenario: str, pattern: str, capacity: float) -> bool:
+    """True when a heavier load point of the same sweep broke the SLO, so capacity is a ceiling."""
+    pts = summary[(summary["scenario"] == scenario) & (summary["pattern"] == pattern)]
+    return bool(((pts["value"] > capacity) & ~pts["slo_ok"].astype(bool)).any())
+
+
 def breakeven(runs: list[Path], providers: Path = PROVIDERS) -> pd.DataFrame:
+    """U* for both capacities: closed loop (concurrency ladder) and open loop (Poisson rate sweep).
+
+    An open-loop sweep that never broke the SLO gives a lower bound on capacity, hence an upper
+    bound on U*; the `bound` column says which one a row is.
+    """
     data = yaml.safe_load(providers.read_text())
     endpoints = [e for e in data["endpoints"] if e.get("quantization") != "n/a"]
     rows = []
     for run in runs:
         meta = json.loads((run / "run.json").read_text())
         cap = pd.read_csv(run / "analysis" / "capacity.csv")
-        cap = cap[cap["pattern"] == "concurrency"]
+        cap = cap[cap["pattern"].isin(LOOP)]
+        summary_path = run / "analysis" / "summary.csv"
+        summary = pd.read_csv(summary_path) if summary_path.exists() else None
         size = model_size(meta["model"])
         for _, c in cap.iterrows():
             if pd.isna(c["usd_per_1m_output"]):
                 continue
+            ceiling = summary is None or ceiling_found(
+                summary, c["scenario"], c["pattern"], float(c["capacity"])
+            )
             ratio = scenario_ratio(c["scenario"])
             for ep in endpoints:
                 if model_size(ep["model"]) != size:
                     continue
                 api = api_price_per_1m_output(ep, ratio)
                 ours = float(c["usd_per_1m_output"])
+                u = ours / api
+                if ours > api:
+                    pays = "never"
+                elif ceiling:
+                    pays = f"above {u:.0%} load"
+                else:
+                    pays = f"above {u:.0%} load at most"
                 rows.append(
                     {
                         "run": meta["label"],
                         "model": meta["model"],
                         "scenario": c["scenario"],
+                        "loop": LOOP[c["pattern"]],
+                        "capacity": c["capacity"],
+                        "bound": "ceiling" if ceiling else "SLO never broke",
                         "ours_usd_per_1m": round(ours, 3),
                         "api": ep["id"],
                         "api_quantization": ep["quantization"],
                         "api_usd_per_1m": round(api, 3),
-                        "u_star": round(ours / api, 3),
-                        "pays_off": "never" if ours > api else f"above {ours / api:.0%} load",
+                        "u_star": round(u, 3),
+                        "pays_off": pays,
                     }
                 )
     df = pd.DataFrame(rows)
     if len(df):
         # A re-run of the same configuration supersedes the earlier one: runs come in date order.
-        df = df.drop_duplicates(["run", "scenario", "api"], keep="last").reset_index(drop=True)
+        df = df.drop_duplicates(["run", "scenario", "loop", "api"], keep="last").reset_index(
+            drop=True
+        )
         df.attrs["snapshot"] = str(data["snapshot"])
     return df
 
