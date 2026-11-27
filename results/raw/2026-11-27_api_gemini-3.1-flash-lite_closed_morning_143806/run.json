@@ -1,0 +1,26 @@
+{
+  "label": "2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806",
+  "startedAt": "2026-11-27T14:38:06.654Z",
+  "loadgenVersion": "0.1.0",
+  "target": "https://openrouter.ai",
+  "chatPath": "/api/v1/chat/completions",
+  "model": "google/gemini-3.1-flash-lite",
+  "hostedApi": true,
+  "extraBody": {
+    "reasoning": {
+      "effort": "none"
+    },
+    "provider": {
+      "only": [
+        "google-ai-studio"
+      ],
+      "allow_fallbacks": false
+    }
+  },
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "fixed",
+    "sampleWords": 0
+  },
+  "finishedAt": "2026-11-27T14:43:38.697Z"
+}

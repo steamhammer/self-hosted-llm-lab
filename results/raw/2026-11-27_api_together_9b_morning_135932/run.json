@@ -1,0 +1,26 @@
+{
+  "label": "2026-11-27_api_together_9b_morning_135932",
+  "startedAt": "2026-11-27T13:59:32.404Z",
+  "loadgenVersion": "0.1.0",
+  "target": "https://openrouter.ai",
+  "chatPath": "/api/v1/chat/completions",
+  "model": "qwen/qwen3.5-9b",
+  "hostedApi": true,
+  "extraBody": {
+    "reasoning": {
+      "effort": "none"
+    },
+    "provider": {
+      "only": [
+        "together"
+      ],
+      "allow_fallbacks": false
+    }
+  },
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "fixed",
+    "sampleWords": 0
+  },
+  "finishedAt": "2026-11-27T14:06:27.601Z"
+}

@@ -1,0 +1,172 @@
+# Hosted APIs: latency, errors and cost
+
+| run | endpoint | daypart | scenario | concurrency | n | errors | http_429 | ttft_p50 | ttft_p95 | tpot_p50 | tpot_p95 | output_tokens_mean | reasoning_leak | providers_seen | billed_usd | listed_usd | billed_usd_per_1m_output | input_per_output |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | chat | 1 | 30 | 0 | 0 | 606.4 | 658.5 | 34.93 | 38.85 | 256.0 | 0 | Alibaba | 0.015111 | 0.015111 | 1.968 | 2.09 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | chat | 2 | 31 | 0 | 0 | 606.4 | 638.4 | 35.42 | 39.71 | 256.0 | 0 | Alibaba | 0.015614 | 0.015614 | 1.968 | 2.09 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | chat | 4 | 33 | 1 | 0 | 606.4 | 627.5 | 35.04 | 37.08 | 256.0 | 0 | Alibaba | 0.016118 | 0.016118 | 1.968 | 2.09 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | chat | 8 | 56 | 0 | 0 | 604.6 | 708.5 | 34.46 | 36.66 | 256.0 | 0 | Alibaba | 0.028206 | 0.028206 | 1.968 | 2.09 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | rag | 1 | 30 | 0 | 0 | 2219.1 | 2283.8 | 34.4 | 40.91 | 300.0 | 0 | Alibaba | 0.037575 | 0.037575 | 4.175 | 13.41 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | rag | 2 | 31 | 0 | 0 | 2213.7 | 2356.1 | 35.61 | 41.85 | 300.0 | 0 | Alibaba | 0.038827 | 0.038827 | 4.175 | 13.41 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | rag | 4 | 33 | 1 | 1 | 2209.9 | 11659.9 | 34.35 | 37.08 | 300.0 | 0 | Alibaba | 0.04008 | 0.04008 | 4.175 | 13.41 |
+| 2026-11-26_api_alibaba_27b_day_235931 | alibaba_27b | day | rag | 8 | 37 | 8 | 8 | 2242.4 | 11201.1 | 34.89 | 37.58 | 300.0 | 0 | Alibaba | 0.036322 | 0.036322 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | chat | 1 | 30 | 0 | 0 | 612.8 | 1698.8 | 36.2 | 39.56 | 256.0 | 0 | Alibaba | 0.015111 | 0.015111 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | chat | 2 | 31 | 1 | 1 | 612.6 | 9167.8 | 35.41 | 38.65 | 256.0 | 0 | Alibaba | 0.015111 | 0.015111 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | chat | 4 | 33 | 0 | 0 | 604.3 | 757.6 | 36.0 | 38.77 | 256.0 | 0 | Alibaba | 0.016622 | 0.016622 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | chat | 8 | 42 | 0 | 0 | 611.6 | 10598.9 | 35.26 | 37.46 | 256.0 | 0 | Alibaba | 0.021155 | 0.021155 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | rag | 1 | 30 | 1 | 0 | 2215.1 | 2496.4 | 35.7 | 39.22 | 300.0 | 0 | Alibaba | 0.036322 | 0.036322 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | rag | 2 | 31 | 0 | 0 | 2209.3 | 3112.9 | 35.25 | 38.73 | 300.0 | 0 | Alibaba | 0.038827 | 0.038827 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | rag | 4 | 33 | 4 | 0 | 2216.4 | 12949.5 | 35.77 | 39.21 | 300.0 | 0 | Alibaba | 0.036322 | 0.036322 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_evening_022654 | alibaba_27b | evening | rag | 8 | 37 | 3 | 3 | 5231.3 | 12568.6 | 35.88 | 43.29 | 300.0 | 0 | Alibaba | 0.042584 | 0.042584 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | chat | 1 | 30 | 5 | 5 | 624.0 | 7025.5 | 35.2 | 37.95 | 256.0 | 0 | Alibaba | 0.012592 | 0.012592 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | chat | 2 | 31 | 8 | 8 | 628.8 | 10255.9 | 35.53 | 41.03 | 256.0 | 0 | Alibaba | 0.011585 | 0.011585 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | chat | 4 | 33 | 1 | 0 | 617.8 | 707.8 | 34.16 | 37.28 | 256.0 | 0 | Alibaba | 0.016118 | 0.016118 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | chat | 8 | 40 | 5 | 5 | 2192.8 | 10920.7 | 35.53 | 45.19 | 256.0 | 0 | Alibaba | 0.017629 | 0.017629 | 1.968 | 2.09 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | rag | 1 | 30 | 3 | 3 | 2250.2 | 11948.5 | 35.29 | 37.53 | 300.0 | 0 | Alibaba | 0.033817 | 0.033817 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | rag | 2 | 31 | 9 | 9 | 2239.5 | 11628.6 | 34.56 | 40.69 | 300.0 | 0 | Alibaba | 0.027555 | 0.027555 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | rag | 4 | 33 | 15 | 15 | 2272.1 | 12213.7 | 34.85 | 45.11 | 300.0 | 0 | Alibaba | 0.022545 | 0.022545 | 4.175 | 13.41 |
+| 2026-11-27_api_alibaba_27b_morning_134556 | alibaba_27b | morning | rag | 8 | 39 | 0 | 0 | 2237.7 | 4430.4 | 35.29 | 42.7 | 300.0 | 0 | Alibaba | 0.048847 | 0.048847 | 4.175 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | chat | 1 | 30 | 0 | 0 | 361.5 | 510.7 | 10.25 | 12.0 | 256.0 | 0 | Darkbloom | 0.002282 | 0.002282 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | chat | 2 | 40 | 0 | 0 | 369.8 | 544.6 | 10.41 | 12.25 | 256.0 | 0 | Darkbloom | 0.003043 | 0.003043 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | chat | 4 | 63 | 0 | 0 | 382.1 | 1861.1 | 10.14 | 13.24 | 256.0 | 0 | Darkbloom | 0.004793 | 0.004793 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | chat | 8 | 67 | 0 | 0 | 383.7 | 675.8 | 10.34 | 14.5 | 256.0 | 0 | Darkbloom | 0.005097 | 0.005097 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | rag | 1 | 30 | 0 | 0 | 1288.0 | 1526.3 | 8.68 | 17.6 | 300.0 | 0 | Darkbloom | 0.010825 | 0.010825 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | rag | 2 | 39 | 0 | 0 | 898.9 | 1299.6 | 6.67 | 8.59 | 300.0 | 0 | Darkbloom | 0.014073 | 0.014073 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | rag | 4 | 63 | 0 | 0 | 867.6 | 1157.5 | 6.59 | 7.39 | 300.0 | 0 | Darkbloom | 0.022733 | 0.022733 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_day_002850 | darkbloom-fp4_9b | day | rag | 8 | 67 | 0 | 0 | 968.0 | 1447.6 | 6.6 | 10.28 | 300.0 | 0 | Darkbloom | 0.024176 | 0.024176 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | chat | 1 | 30 | 0 | 0 | 395.2 | 1619.3 | 9.97 | 11.74 | 256.0 | 0 | Darkbloom | 0.002282 | 0.002282 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | chat | 2 | 43 | 0 | 0 | 379.1 | 937.2 | 9.66 | 12.02 | 256.0 | 0 | Darkbloom | 0.003271 | 0.003271 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | chat | 4 | 63 | 0 | 0 | 364.2 | 583.0 | 9.53 | 11.39 | 256.0 | 0 | Darkbloom | 0.004793 | 0.004793 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | chat | 8 | 67 | 0 | 0 | 345.0 | 637.0 | 9.64 | 11.27 | 256.0 | 0 | Darkbloom | 0.005097 | 0.005097 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | rag | 1 | 30 | 0 | 0 | 1084.8 | 1437.3 | 7.23 | 10.93 | 300.0 | 0 | Darkbloom | 0.010825 | 0.010825 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | rag | 2 | 40 | 0 | 0 | 1024.2 | 1340.7 | 6.53 | 8.84 | 300.0 | 0 | Darkbloom | 0.014434 | 0.014434 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | rag | 4 | 63 | 0 | 0 | 1027.2 | 1536.7 | 6.58 | 12.09 | 300.0 | 0 | Darkbloom | 0.022733 | 0.022733 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_evening_021402 | darkbloom-fp4_9b | evening | rag | 8 | 67 | 0 | 0 | 1223.9 | 1512.7 | 8.34 | 11.13 | 300.0 | 0 | Darkbloom | 0.024176 | 0.024176 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | chat | 1 | 30 | 0 | 0 | 328.2 | 504.2 | 10.31 | 13.57 | 256.0 | 0 | Darkbloom | 0.002282 | 0.002282 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | chat | 2 | 31 | 0 | 0 | 527.0 | 877.4 | 15.43 | 25.7 | 256.0 | 0 | Darkbloom | 0.002358 | 0.002358 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | chat | 4 | 53 | 0 | 0 | 490.7 | 804.7 | 14.55 | 22.38 | 256.0 | 0 | Darkbloom | 0.004032 | 0.004032 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | chat | 8 | 67 | 0 | 0 | 399.6 | 783.3 | 12.98 | 18.22 | 256.0 | 0 | Darkbloom | 0.005097 | 0.005097 | 0.297 | 2.09 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | rag | 1 | 30 | 0 | 0 | 1291.8 | 2675.5 | 9.04 | 12.82 | 300.0 | 0 | Darkbloom | 0.010825 | 0.010825 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | rag | 2 | 37 | 0 | 0 | 1092.0 | 1953.1 | 6.58 | 10.62 | 300.0 | 0 | Darkbloom | 0.013351 | 0.013351 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | rag | 4 | 60 | 0 | 0 | 1259.6 | 1416.0 | 10.12 | 11.22 | 300.0 | 0 | Darkbloom | 0.02165 | 0.02165 | 1.203 | 13.41 |
+| 2026-11-27_api_darkbloom-fp4_9b_morning_141210 | darkbloom-fp4_9b | morning | rag | 8 | 67 | 0 | 0 | 1327.3 | 3238.3 | 10.17 | 12.62 | 300.0 | 0 | Darkbloom | 0.024176 | 0.024176 | 1.203 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | chat | 1 | 60 | 60 | 60 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | chat | 2 | 61 | 61 | 61 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | chat | 4 | 63 | 63 | 63 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | chat | 8 | 67 | 67 | 67 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | rag | 1 | 60 | 60 | 60 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | rag | 2 | 61 | 61 | 61 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | rag | 4 | 63 | 63 | 63 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_day_003816 | deepinfra-bf16_9b | day | rag | 8 | 67 | 67 | 67 |  |  |  |  |  | 0 |  |  |  |  |  |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | chat | 1 | 30 | 0 | 0 | 437.5 | 612.9 | 42.19 | 55.14 | 256.0 | 0 | DeepInfra | 0.002757 | 0.002757 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | chat | 2 | 31 | 0 | 0 | 405.7 | 596.5 | 30.16 | 43.66 | 256.0 | 0 | DeepInfra | 0.002849 | 0.002849 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | chat | 4 | 33 | 0 | 0 | 413.5 | 775.9 | 36.12 | 43.45 | 256.0 | 0 | DeepInfra | 0.003033 | 0.003033 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | chat | 8 | 50 | 0 | 0 | 454.5 | 873.8 | 38.31 | 47.17 | 256.0 | 0 | DeepInfra | 0.004595 | 0.004595 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | rag | 1 | 30 | 0 | 0 | 448.8 | 804.4 | 33.77 | 38.43 | 300.0 | 0 | DeepInfra | 0.013419 | 0.013419 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | rag | 2 | 31 | 0 | 0 | 455.4 | 551.2 | 31.73 | 44.15 | 300.0 | 0 | DeepInfra | 0.013866 | 0.013866 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | rag | 4 | 33 | 0 | 0 | 499.2 | 1204.5 | 33.64 | 38.98 | 300.0 | 0 | DeepInfra | 0.014761 | 0.014761 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_evening_013345 | deepinfra-bf16_9b | evening | rag | 8 | 51 | 0 | 0 | 475.1 | 972.2 | 32.22 | 36.59 | 300.0 | 0 | DeepInfra | 0.022812 | 0.022812 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | chat | 1 | 30 | 0 | 0 | 405.4 | 625.0 | 31.79 | 44.44 | 256.0 | 0 | DeepInfra | 0.002757 | 0.002757 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | chat | 2 | 31 | 0 | 0 | 410.4 | 512.9 | 38.02 | 50.61 | 256.0 | 0 | DeepInfra | 0.002849 | 0.002849 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | chat | 4 | 33 | 0 | 0 | 427.7 | 522.7 | 30.95 | 53.49 | 256.0 | 0 | DeepInfra | 0.003033 | 0.003033 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | chat | 8 | 39 | 0 | 0 | 497.2 | 1394.9 | 50.55 | 55.89 | 256.0 | 0 | DeepInfra | 0.003584 | 0.003584 | 0.359 | 2.09 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | rag | 1 | 30 | 0 | 0 | 490.8 | 599.3 | 39.11 | 53.15 | 300.0 | 0 | DeepInfra | 0.013419 | 0.013419 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | rag | 2 | 31 | 0 | 0 | 409.6 | 608.2 | 22.41 | 25.47 | 300.0 | 0 | DeepInfra | 0.013866 | 0.013866 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | rag | 4 | 33 | 0 | 0 | 434.3 | 547.9 | 24.86 | 27.57 | 300.0 | 0 | DeepInfra | 0.014761 | 0.014761 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-bf16_9b_morning_141620 | deepinfra-bf16_9b | morning | rag | 8 | 61 | 0 | 0 | 504.1 | 655.6 | 25.57 | 29.42 | 300.0 | 0 | DeepInfra | 0.027285 | 0.027285 | 1.491 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | chat | 1 | 30 | 0 | 0 | 381.2 | 1691.3 | 22.83 | 53.82 | 256.0 | 0 | DeepInfra | 0.024141 | 0.024141 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | chat | 2 | 31 | 0 | 0 | 384.2 | 2692.9 | 45.15 | 107.6 | 256.0 | 0 | DeepInfra | 0.024946 | 0.024946 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | chat | 4 | 33 | 0 | 0 | 384.3 | 2256.6 | 41.82 | 104.37 | 256.0 | 0 | DeepInfra | 0.026555 | 0.026555 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | chat | 8 | 67 | 0 | 0 | 354.5 | 532.2 | 11.25 | 12.1 | 256.0 | 0 | DeepInfra | 0.053915 | 0.053915 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | rag | 1 | 30 | 0 | 0 | 697.8 | 877.5 | 10.24 | 11.34 | 300.0 | 0 | DeepInfra | 0.054779 | 0.054779 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | rag | 2 | 32 | 0 | 0 | 593.7 | 697.9 | 10.97 | 11.47 | 300.0 | 0 | DeepInfra | 0.058431 | 0.058431 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | rag | 4 | 53 | 0 | 0 | 719.9 | 1486.5 | 11.87 | 17.74 | 300.0 | 0 | DeepInfra | 0.096777 | 0.096777 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_day_002424 | deepinfra-fp8_27b | day | rag | 8 | 67 | 0 | 0 | 1028.3 | 1554.2 | 12.61 | 17.41 | 300.0 | 0 | DeepInfra | 0.122341 | 0.122341 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | chat | 1 | 30 | 0 | 0 | 322.0 | 420.7 | 25.83 | 29.44 | 256.0 | 0 | DeepInfra | 0.024141 | 0.024141 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | chat | 2 | 31 | 0 | 0 | 329.3 | 502.5 | 25.01 | 26.73 | 256.0 | 0 | DeepInfra | 0.024946 | 0.024946 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | chat | 4 | 37 | 0 | 0 | 325.3 | 462.6 | 24.73 | 29.96 | 256.0 | 0 | DeepInfra | 0.029774 | 0.029774 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | chat | 8 | 67 | 0 | 0 | 315.3 | 427.8 | 17.89 | 24.18 | 256.0 | 0 | DeepInfra | 0.053915 | 0.053915 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | rag | 1 | 30 | 0 | 0 | 657.8 | 1057.9 | 18.22 | 21.86 | 300.0 | 0 | DeepInfra | 0.054779 | 0.054779 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | rag | 2 | 31 | 0 | 0 | 652.2 | 964.9 | 17.41 | 21.12 | 300.0 | 0 | DeepInfra | 0.056605 | 0.056605 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | rag | 4 | 43 | 0 | 0 | 840.3 | 1148.8 | 15.57 | 19.53 | 300.0 | 0 | DeepInfra | 0.078517 | 0.078517 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_evening_021351 | deepinfra-fp8_27b | evening | rag | 8 | 67 | 8 | 0 | 890.3 | 1373.8 | 18.06 | 21.24 | 300.0 | 0 | DeepInfra | 0.107733 | 0.107733 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | chat | 1 | 30 | 0 | 0 | 296.0 | 448.2 | 15.64 | 57.95 | 256.0 | 0 | DeepInfra | 0.024141 | 0.024141 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | chat | 2 | 31 | 0 | 0 | 361.9 | 631.2 | 14.33 | 35.36 | 256.0 | 0 | DeepInfra | 0.024946 | 0.024946 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | chat | 4 | 47 | 0 | 0 | 320.7 | 586.7 | 15.27 | 21.73 | 256.0 | 0 | DeepInfra | 0.037821 | 0.037821 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | chat | 8 | 67 | 0 | 0 | 361.1 | 616.8 | 14.37 | 15.38 | 256.0 | 0 | DeepInfra | 0.053915 | 0.053915 | 3.143 | 2.09 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | rag | 1 | 30 | 0 | 0 | 682.5 | 1026.2 | 15.73 | 33.74 | 300.0 | 0 | DeepInfra | 0.054779 | 0.054779 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | rag | 2 | 31 | 0 | 0 | 670.7 | 968.0 | 16.5 | 18.48 | 300.0 | 0 | DeepInfra | 0.056605 | 0.056605 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | rag | 4 | 34 | 0 | 0 | 877.1 | 1152.2 | 15.7 | 70.09 | 300.0 | 0 | DeepInfra | 0.062083 | 0.062083 | 6.087 | 13.41 |
+| 2026-11-27_api_deepinfra-fp8_27b_morning_134556 | deepinfra-fp8_27b | morning | rag | 8 | 67 | 0 | 0 | 1220.4 | 1468.1 | 18.6 | 29.62 | 300.0 | 0 | DeepInfra | 0.122341 | 0.122341 | 6.087 | 13.41 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | chat | 1 | 46 | 0 | 0 | 358.3 | 610.8 | 3.82 | 4.29 | 252.0 | 0 | Google AI Studio | 0.023414 | 0.023414 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | chat | 2 | 61 | 0 | 0 | 381.4 | 646.4 | 3.92 | 4.73 | 252.0 | 0 | Google AI Studio | 0.031049 | 0.031049 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | chat | 4 | 63 | 0 | 0 | 395.6 | 524.6 | 3.88 | 4.7 | 252.0 | 0 | Google AI Studio | 0.032067 | 0.032067 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | chat | 8 | 67 | 0 | 0 | 369.7 | 546.5 | 3.88 | 4.86 | 252.0 | 0 | Google AI Studio | 0.034103 | 0.034103 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | rag | 1 | 39 | 0 | 0 | 576.4 | 712.8 | 3.22 | 3.97 | 296.0 | 0 | Google AI Studio | 0.056433 | 0.056433 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | rag | 2 | 61 | 0 | 0 | 571.6 | 794.0 | 3.25 | 3.98 | 296.0 | 0 | Google AI Studio | 0.088267 | 0.088267 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | rag | 4 | 63 | 0 | 0 | 564.9 | 730.8 | 3.3 | 3.96 | 296.0 | 0 | Google AI Studio | 0.091161 | 0.091161 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_day_004636 | gemini-3.1-flash-lite_closed | day | rag | 8 | 67 | 0 | 0 | 557.4 | 700.9 | 3.24 | 3.79 | 296.0 | 0 | Google AI Studio | 0.096949 | 0.096949 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | chat | 1 | 38 | 0 | 0 | 550.2 | 676.1 | 4.29 | 4.74 | 252.0 | 0 | Google AI Studio | 0.019342 | 0.019342 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | chat | 2 | 61 | 0 | 0 | 550.1 | 669.7 | 4.28 | 4.83 | 252.0 | 0 | Google AI Studio | 0.031049 | 0.031049 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | chat | 4 | 63 | 0 | 0 | 527.6 | 726.7 | 4.33 | 4.97 | 252.0 | 0 | Google AI Studio | 0.032067 | 0.032067 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | chat | 8 | 67 | 0 | 0 | 551.8 | 719.6 | 4.3 | 4.79 | 252.0 | 0 | Google AI Studio | 0.034103 | 0.034103 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | rag | 1 | 35 | 0 | 0 | 688.6 | 884.7 | 3.41 | 4.04 | 296.0 | 0 | Google AI Studio | 0.050645 | 0.050645 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | rag | 2 | 61 | 0 | 0 | 706.0 | 947.7 | 3.58 | 4.42 | 296.0 | 0 | Google AI Studio | 0.088267 | 0.088267 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | rag | 4 | 63 | 0 | 0 | 625.7 | 861.8 | 3.5 | 4.14 | 296.0 | 0 | Google AI Studio | 0.091161 | 0.091161 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_evening_020320 | gemini-3.1-flash-lite_closed | evening | rag | 8 | 67 | 0 | 0 | 558.6 | 720.7 | 3.32 | 3.92 | 296.0 | 0 | Google AI Studio | 0.096949 | 0.096949 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | chat | 1 | 44 | 0 | 0 | 408.8 | 579.1 | 3.91 | 4.47 | 252.0 | 0 | Google AI Studio | 0.022396 | 0.022396 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | chat | 2 | 61 | 0 | 0 | 415.8 | 683.7 | 3.8 | 4.47 | 252.0 | 0 | Google AI Studio | 0.031049 | 0.031049 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | chat | 4 | 63 | 0 | 0 | 390.4 | 569.6 | 3.95 | 4.85 | 252.0 | 0 | Google AI Studio | 0.032067 | 0.032067 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | chat | 8 | 67 | 0 | 0 | 412.0 | 566.5 | 3.97 | 4.94 | 252.0 | 0 | Google AI Studio | 0.034103 | 0.034103 | 2.02 | 2.08 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | rag | 1 | 37 | 0 | 0 | 630.8 | 732.9 | 3.31 | 4.33 | 296.0 | 0 | Google AI Studio | 0.053539 | 0.053539 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | rag | 2 | 61 | 0 | 0 | 608.3 | 774.9 | 3.32 | 4.15 | 296.0 | 0 | Google AI Studio | 0.088267 | 0.088267 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | rag | 4 | 63 | 0 | 0 | 620.2 | 774.5 | 3.46 | 4.2 | 296.0 | 0 | Google AI Studio | 0.091161 | 0.091161 | 4.889 | 13.55 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed_morning_143806 | gemini-3.1-flash-lite_closed | morning | rag | 8 | 67 | 0 | 0 | 607.7 | 1021.3 | 3.48 | 4.2 | 296.0 | 0 | Google AI Studio | 0.096949 | 0.096949 | 4.889 | 13.55 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | chat | 1 | 30 | 0 | 0 | 629.0 | 3066.1 | 23.76 | 39.94 | 256.0 | 0 | SiliconFlow | 0.019373 | 0.019372 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | chat | 2 | 31 | 0 | 0 | 749.2 | 4802.8 | 23.83 | 52.06 | 256.0 | 0 | SiliconFlow | 0.020018 | 0.020018 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | chat | 4 | 33 | 0 | 0 | 677.7 | 9145.1 | 26.49 | 109.26 | 256.0 | 0 | SiliconFlow | 0.02131 | 0.02131 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | chat | 8 | 49 | 0 | 0 | 688.7 | 10815.6 | 27.34 | 44.08 | 256.0 | 0 | SiliconFlow | 0.031642 | 0.031642 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | rag | 1 | 30 | 0 | 0 | 1359.3 | 4094.4 | 27.82 | 51.28 | 300.0 | 0 | SiliconFlow | 0.048173 | 0.048172 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | rag | 2 | 31 | 0 | 0 | 1425.2 | 6351.8 | 27.29 | 51.16 | 300.0 | 0 | SiliconFlow | 0.049778 | 0.049778 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | rag | 4 | 33 | 0 | 0 | 1897.5 | 11327.0 | 39.99 | 96.19 | 300.0 | 0 | SiliconFlow | 0.05299 | 0.05299 | 5.352 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_day_004035 | siliconflow-fp8_27b | day | rag | 8 | 37 | 0 | 0 | 1928.0 | 9053.5 | 43.26 | 145.78 | 300.0 | 0 | SiliconFlow | 0.059413 | 0.059413 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | chat | 1 | 30 | 0 | 0 | 687.6 | 8919.1 | 33.16 | 64.59 | 256.0 | 0 | SiliconFlow | 0.019373 | 0.019372 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | chat | 2 | 31 | 0 | 0 | 739.3 | 6960.4 | 36.73 | 100.33 | 256.0 | 0 | SiliconFlow | 0.020018 | 0.020018 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | chat | 4 | 33 | 0 | 0 | 631.7 | 13311.5 | 39.32 | 87.11 | 256.0 | 0 | SiliconFlow | 0.02131 | 0.02131 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | chat | 8 | 56 | 0 | 0 | 654.1 | 2583.4 | 28.19 | 40.06 | 256.0 | 0 | SiliconFlow | 0.036162 | 0.036162 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | rag | 1 | 30 | 0 | 0 | 1649.0 | 8547.4 | 31.07 | 167.04 | 300.0 | 0 | SiliconFlow | 0.048173 | 0.048172 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | rag | 2 | 31 | 1 | 0 | 1805.3 | 10669.2 | 43.86 | 127.66 | 300.0 | 0 | SiliconFlow | 0.048173 | 0.048172 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | rag | 4 | 33 | 0 | 0 | 1682.4 | 43900.6 | 37.74 | 235.52 | 300.0 | 0 | SiliconFlow | 0.05299 | 0.05299 | 5.352 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_evening_013345 | siliconflow-fp8_27b | evening | rag | 8 | 37 | 0 | 0 | 1863.7 | 4993.1 | 35.23 | 79.37 | 300.0 | 0 | SiliconFlow | 0.059413 | 0.059413 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | chat | 1 | 30 | 0 | 0 | 641.9 | 5163.2 | 26.63 | 71.74 | 256.0 | 0 | SiliconFlow | 0.019373 | 0.019372 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | chat | 2 | 31 | 0 | 0 | 671.7 | 2545.6 | 25.08 | 53.35 | 256.0 | 0 | SiliconFlow | 0.020018 | 0.020018 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | chat | 4 | 33 | 0 | 0 | 673.6 | 3855.7 | 31.37 | 59.32 | 256.0 | 0 | SiliconFlow | 0.02131 | 0.02131 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | chat | 8 | 42 | 0 | 0 | 706.4 | 7051.8 | 30.48 | 58.07 | 256.0 | 0 | SiliconFlow | 0.027121 | 0.027122 | 2.522 | 2.09 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | rag | 1 | 30 | 0 | 0 | 1546.6 | 3632.4 | 26.23 | 58.07 | 300.0 | 0 | SiliconFlow | 0.048173 | 0.048172 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | rag | 2 | 31 | 0 | 0 | 1757.3 | 5626.8 | 47.18 | 160.62 | 300.0 | 0 | SiliconFlow | 0.049778 | 0.049778 | 5.353 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | rag | 4 | 33 | 0 | 0 | 1532.8 | 4959.5 | 39.21 | 83.55 | 300.0 | 0 | SiliconFlow | 0.05299 | 0.05299 | 5.352 | 13.41 |
+| 2026-11-27_api_siliconflow-fp8_27b_morning_134556 | siliconflow-fp8_27b | morning | rag | 8 | 37 | 1 | 0 | 2564.0 | 43070.2 | 49.3 | 189.31 | 300.0 | 0 | SiliconFlow | 0.057807 | 0.057807 | 5.353 | 13.41 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | chat | 1 | 30 | 0 | 0 | 207.5 | 249.2 | 5.82 | 11.36 | 256.0 | 0 | Together | 0.004648 | 0.004648 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | chat | 2 | 60 | 0 | 0 | 211.8 | 274.2 | 5.67 | 11.18 | 256.0 | 0 | Together | 0.009297 | 0.009297 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | chat | 4 | 63 | 0 | 0 | 216.5 | 249.1 | 5.8 | 11.21 | 256.0 | 0 | Together | 0.009762 | 0.009762 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | chat | 8 | 67 | 0 | 0 | 224.5 | 301.5 | 6.28 | 10.93 | 256.0 | 0 | Together | 0.010382 | 0.010382 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | rag | 1 | 30 | 0 | 0 | 326.2 | 533.9 | 5.56 | 10.47 | 300.0 | 0 | Together | 0.022767 | 0.022767 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | rag | 2 | 48 | 0 | 0 | 288.8 | 490.8 | 6.73 | 12.38 | 300.0 | 0 | Together | 0.036428 | 0.036428 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | rag | 4 | 63 | 0 | 0 | 288.4 | 545.0 | 7.28 | 12.36 | 300.0 | 0 | Together | 0.047811 | 0.047811 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_day_003923 | together_9b | day | rag | 8 | 67 | 0 | 0 | 420.8 | 721.8 | 7.21 | 14.61 | 300.0 | 0 | Together | 0.050847 | 0.050847 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | chat | 1 | 36 | 0 | 0 | 209.5 | 314.8 | 5.69 | 6.24 | 256.0 | 0 | Together | 0.005578 | 0.005578 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | chat | 2 | 61 | 0 | 0 | 209.8 | 247.6 | 5.96 | 6.32 | 256.0 | 0 | Together | 0.009452 | 0.009452 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | chat | 4 | 63 | 0 | 0 | 215.8 | 266.1 | 5.89 | 6.28 | 256.0 | 0 | Together | 0.009762 | 0.009762 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | chat | 8 | 67 | 0 | 0 | 220.6 | 259.1 | 6.2 | 6.71 | 256.0 | 0 | Together | 0.010382 | 0.010382 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | rag | 1 | 31 | 0 | 0 | 293.3 | 470.0 | 5.53 | 5.84 | 300.0 | 0 | Together | 0.023526 | 0.023526 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | rag | 2 | 58 | 0 | 0 | 309.5 | 516.7 | 5.77 | 6.22 | 300.0 | 0 | Together | 0.044017 | 0.044017 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | rag | 4 | 63 | 0 | 0 | 339.5 | 463.3 | 6.57 | 7.22 | 300.0 | 0 | Together | 0.047811 | 0.047811 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_evening_015652 | together_9b | evening | rag | 8 | 67 | 0 | 0 | 345.4 | 580.8 | 7.79 | 8.73 | 300.0 | 0 | Together | 0.050847 | 0.050847 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | chat | 1 | 34 | 0 | 0 | 228.1 | 405.4 | 5.85 | 6.44 | 256.0 | 0 | Together | 0.005268 | 0.005268 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | chat | 2 | 61 | 0 | 0 | 224.4 | 270.9 | 6.33 | 7.22 | 256.0 | 0 | Together | 0.009452 | 0.009452 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | chat | 4 | 63 | 0 | 0 | 227.4 | 304.4 | 6.78 | 7.41 | 256.0 | 0 | Together | 0.009762 | 0.009762 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | chat | 8 | 67 | 0 | 0 | 241.5 | 419.4 | 7.2 | 7.94 | 256.0 | 0 | Together | 0.010382 | 0.010382 | 0.605 | 2.09 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | rag | 1 | 30 | 0 | 0 | 310.0 | 461.1 | 6.73 | 7.03 | 300.0 | 0 | Together | 0.022767 | 0.022767 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | rag | 2 | 51 | 0 | 0 | 299.6 | 756.6 | 7.27 | 7.55 | 300.0 | 0 | Together | 0.038704 | 0.038704 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | rag | 4 | 63 | 0 | 0 | 358.8 | 537.4 | 7.57 | 8.38 | 300.0 | 0 | Together | 0.047811 | 0.047811 | 2.53 | 13.41 |
+| 2026-11-27_api_together_9b_morning_135932 | together_9b | morning | rag | 8 | 67 | 0 | 0 | 305.1 | 528.4 | 8.85 | 9.72 | 300.0 | 0 | Together | 0.050847 | 0.050847 | 2.53 | 13.41 |

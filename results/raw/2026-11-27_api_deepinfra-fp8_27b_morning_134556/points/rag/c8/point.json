@@ -1,0 +1,35 @@
+{
+  "scenario": "rag",
+  "pattern": "concurrency",
+  "value": 8,
+  "seed": 3927985699,
+  "startedAt": "2026-11-27T13:58:13.038Z",
+  "wallMs": 66753,
+  "warmupEndMs": 6393,
+  "requests": {
+    "total": 75,
+    "warmup": 8,
+    "measured": 67
+  },
+  "client": {
+    "eventLoopUtilization": 0.018,
+    "cpuPercent": 2.1,
+    "dropped": 0,
+    "valid": true
+  },
+  "slo": {
+    "ttftP95Ms": 2000,
+    "tpotP95Ms": 50,
+    "maxErrorRate": 0.005
+  },
+  "quick": {
+    "measured": 67,
+    "errors": 0,
+    "errorRate": 0,
+    "ttftP95": 1468.098,
+    "tpotP95": 29.615143812708986,
+    "reqPerS": 1.1100073624965954,
+    "outputTokPerS": 333.0022087489786,
+    "sloOk": true
+  }
+}

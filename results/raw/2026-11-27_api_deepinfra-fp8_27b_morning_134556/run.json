@@ -1,0 +1,26 @@
+{
+  "label": "2026-11-27_api_deepinfra-fp8_27b_morning_134556",
+  "startedAt": "2026-11-27T13:45:58.094Z",
+  "loadgenVersion": "0.1.0",
+  "target": "https://openrouter.ai",
+  "chatPath": "/api/v1/chat/completions",
+  "model": "qwen/qwen3.5-27b",
+  "hostedApi": true,
+  "extraBody": {
+    "reasoning": {
+      "effort": "none"
+    },
+    "provider": {
+      "only": [
+        "deepinfra/fp8"
+      ],
+      "allow_fallbacks": false
+    }
+  },
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "fixed",
+    "sampleWords": 0
+  },
+  "finishedAt": "2026-11-27T13:59:21.806Z"
+}

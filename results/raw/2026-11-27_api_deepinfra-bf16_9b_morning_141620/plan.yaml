@@ -1,0 +1,45 @@
+name: api
+model: qwen/qwen3.5-9b
+target: https://openrouter.ai
+chatPath: /api/v1/chat/completions
+auth:
+  bearerEnv: OPENROUTER_API_KEY
+headers:
+  X-Title: self-hosted-llm-lab
+hostedApi: true
+tokensPerWord: 1
+sendIgnoreEos: false
+promptPrefix: "Write a long story that uses all of these words: "
+scenarios:
+  - chat
+  - rag
+scenarioDir: bench/scenarios
+ladder:
+  concurrency:
+    - 1
+    - 2
+    - 4
+    - 8
+  stopAfterViolations: 99
+openLoop:
+  fractions: []
+point:
+  warmupSeconds: 5
+  warmupRequests: 3
+  maxRequests: 60
+  maxSeconds: 60
+  minRequests: 30
+  cooldownSeconds: 2
+  requestTimeoutSeconds: 600
+extraBody:
+  reasoning:
+    effort: none
+  provider:
+    only:
+      - deepinfra/bf16
+    allow_fallbacks: false
+hooks: {}
+client:
+  maxInflight: 4096
+  maxEventLoopUtilization: 0.8
+seed: 1
