@@ -1,0 +1,21 @@
+{
+  "label": "h100-80gb_qwen3.5-27b.fp8",
+  "startedAt": "2026-11-27T19:30:21.313Z",
+  "loadgenVersion": "0.1.0",
+  "target": "http://127.0.0.1:8000",
+  "chatPath": "/v1/chat/completions",
+  "model": "Qwen/Qwen3.5-27B-FP8",
+  "hostedApi": false,
+  "extraBody": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "tokenize",
+    "sampleWords": 2000,
+    "sampleTokens": 2000
+  },
+  "finishedAt": "2026-11-27T19:55:33.084Z"
+}

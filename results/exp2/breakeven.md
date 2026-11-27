@@ -43,9 +43,6 @@ API prices: bench/api/providers.yaml, snapshot 2026-11-26.
 | h100-80gb_qwen3.5-27b.bf16 | Qwen/Qwen3.5-27B | rag | 7.768 | alibaba_27b | unknown | 4.16 | 1.867 | never |
 | h100-80gb_qwen3.5-27b.bf16 | Qwen/Qwen3.5-27B | rag | 7.768 | deepinfra-fp8_27b | fp8 | 6.067 | 1.28 | never |
 | h100-80gb_qwen3.5-27b.bf16 | Qwen/Qwen3.5-27B | rag | 7.768 | siliconflow-fp8_27b | fp8 | 5.333 | 1.456 | never |
-| h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | chat | 1.268 | alibaba_27b | unknown | 1.95 | 0.65 | above 65% load |
-| h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | chat | 1.268 | deepinfra-fp8_27b | fp8 | 3.12 | 0.406 | above 41% load |
-| h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | chat | 1.268 | siliconflow-fp8_27b | fp8 | 2.5 | 0.507 | above 51% load |
 | h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | rag | 3.028 | alibaba_27b | unknown | 4.16 | 0.728 | above 73% load |
 | h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | rag | 3.028 | deepinfra-fp8_27b | fp8 | 6.067 | 0.499 | above 50% load |
 | h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | rag | 3.028 | siliconflow-fp8_27b | fp8 | 5.333 | 0.568 | above 57% load |
@@ -58,3 +55,6 @@ API prices: bench/api/providers.yaml, snapshot 2026-11-26.
 | l40s_qwen3.5-27b.int4 | Qwen/Qwen3.5-27B-GPTQ-Int4 | rag | 12.678 | alibaba_27b | unknown | 4.16 | 3.048 | never |
 | l40s_qwen3.5-27b.int4 | Qwen/Qwen3.5-27B-GPTQ-Int4 | rag | 12.678 | deepinfra-fp8_27b | fp8 | 6.067 | 2.09 | never |
 | l40s_qwen3.5-27b.int4 | Qwen/Qwen3.5-27B-GPTQ-Int4 | rag | 12.678 | siliconflow-fp8_27b | fp8 | 5.333 | 2.377 | never |
+| h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | chat | 1.292 | alibaba_27b | unknown | 1.95 | 0.662 | above 66% load |
+| h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | chat | 1.292 | deepinfra-fp8_27b | fp8 | 3.12 | 0.414 | above 41% load |
+| h100-80gb_qwen3.5-27b.fp8 | Qwen/Qwen3.5-27B-FP8 | chat | 1.292 | siliconflow-fp8_27b | fp8 | 2.5 | 0.517 | above 52% load |

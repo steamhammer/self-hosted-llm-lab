@@ -115,6 +115,8 @@ def breakeven(runs: list[Path], providers: Path = PROVIDERS) -> pd.DataFrame:
                 )
     df = pd.DataFrame(rows)
     if len(df):
+        # A re-run of the same configuration supersedes the earlier one: runs come in date order.
+        df = df.drop_duplicates(["run", "scenario", "api"], keep="last").reset_index(drop=True)
         df.attrs["snapshot"] = str(data["snapshot"])
     return df
 

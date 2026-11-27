@@ -48,6 +48,26 @@ def test_breakeven_matches_models_and_flags_never(tmp_path):
     assert df[df["api"] == "dear"].iloc[0]["pays_off"] == "never"
 
 
+def test_breakeven_keeps_the_latest_rerun(tmp_path):
+    runs = []
+    for stamp, cost in (("2026-11-26_h100_1", 1.3), ("2026-11-27_h100_2", 1.2)):
+        run = tmp_path / stamp
+        (run / "analysis").mkdir(parents=True)
+        (run / "run.json").write_text(json.dumps({"label": "h100", "model": "Qwen/Qwen3.5-9B"}))
+        pd.DataFrame(
+            [{"scenario": "chat", "pattern": "concurrency", "usd_per_1m_output": cost}]
+        ).to_csv(run / "analysis" / "capacity.csv", index=False)
+        runs.append(run)
+    providers = tmp_path / "p.yaml"
+    providers.write_text(
+        "snapshot: 2026-11-26\nendpoints:\n"
+        "  - {id: cheap, model: qwen/qwen3.5-9b, provider: x, quantization: fp4, input: 0.08, output: 0.13}\n"
+    )
+    df = exp2.breakeven(runs, providers)
+    assert len(df) == 1
+    assert df.iloc[0]["ours_usd_per_1m"] == pytest.approx(1.2)
+
+
 def test_mcnemar_exact():
     assert exp2.mcnemar_exact(0, 0) == 1.0
     assert exp2.mcnemar_exact(5, 5) == 1.0
