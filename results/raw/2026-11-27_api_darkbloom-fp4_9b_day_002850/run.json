@@ -1,0 +1,26 @@
+{
+  "label": "2026-11-27_api_darkbloom-fp4_9b_day_002850",
+  "startedAt": "2026-11-27T00:28:50.287Z",
+  "loadgenVersion": "0.1.0",
+  "target": "https://openrouter.ai",
+  "chatPath": "/api/v1/chat/completions",
+  "model": "qwen/qwen3.5-9b",
+  "hostedApi": true,
+  "extraBody": {
+    "reasoning": {
+      "effort": "none"
+    },
+    "provider": {
+      "only": [
+        "darkbloom/fp4"
+      ],
+      "allow_fallbacks": false
+    }
+  },
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "fixed",
+    "sampleWords": 0
+  },
+  "finishedAt": "2026-11-27T00:38:14.818Z"
+}

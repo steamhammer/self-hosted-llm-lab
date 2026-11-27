@@ -1,0 +1,9 @@
+scenario,pattern,value,n,errors,error_rate,error_codes,ttft_p50,ttft_p90,ttft_p95,ttft_p99,tpot_p50,tpot_p95,tpot_p99,itl_p50,itl_p99,e2e_p50,e2e_p95,prompt_tokens_mean,output_tokens_mean,throughput_basis,window_s,req_per_s,output_tok_per_s,total_tok_per_s,goodput_req_per_s,client_elu,client_valid,dropped,p99_reliable,slo_ok
+chat,concurrency,1.0,60,60,1.0,http_429,,,,,,,,,,,,,,steady,12.24178,0.0,0.0,0.0,0.0,0.013,True,0,False,False
+chat,concurrency,2.0,61,61,1.0,http_429,,,,,,,,,,,,,,steady,6.14477,0.0,0.0,0.0,0.0,0.013,True,0,False,False
+chat,concurrency,4.0,63,63,1.0,http_429,,,,,,,,,,,,,,steady,2.8947800000000004,0.0,0.0,0.0,0.0,0.026,True,0,False,False
+chat,concurrency,8.0,67,67,1.0,http_429,,,,,,,,,,,,,,steady,1.37255,0.0,0.0,0.0,0.0,0.045,True,0,False,False
+rag,concurrency,1.0,60,60,1.0,http_429,,,,,,,,,,,,,,steady,11.050139999999999,0.0,0.0,0.0,0.0,0.01,True,0,False,False
+rag,concurrency,2.0,61,61,1.0,http_429,,,,,,,,,,,,,,steady,5.2056700000000005,0.0,0.0,0.0,0.0,0.019,True,0,False,False
+rag,concurrency,4.0,63,63,1.0,http_429,,,,,,,,,,,,,,steady,2.65192,0.0,0.0,0.0,0.0,0.023,True,0,False,False
+rag,concurrency,8.0,67,67,1.0,http_429,,,,,,,,,,,,,,steady,1.2698800000000001,0.0,0.0,0.0,0.0,0.05,True,0,False,False

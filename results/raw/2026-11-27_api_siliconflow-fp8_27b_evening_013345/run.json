@@ -1,0 +1,26 @@
+{
+  "label": "2026-11-27_api_siliconflow-fp8_27b_evening_013345",
+  "startedAt": "2026-11-27T01:33:46.126Z",
+  "loadgenVersion": "0.1.0",
+  "target": "https://openrouter.ai",
+  "chatPath": "/api/v1/chat/completions",
+  "model": "qwen/qwen3.5-27b",
+  "hostedApi": true,
+  "extraBody": {
+    "reasoning": {
+      "effort": "none"
+    },
+    "provider": {
+      "only": [
+        "siliconflow/fp8"
+      ],
+      "allow_fallbacks": false
+    }
+  },
+  "calibration": {
+    "tokensPerWord": 1,
+    "source": "fixed",
+    "sampleWords": 0
+  },
+  "finishedAt": "2026-11-27T02:14:00.706Z"
+}

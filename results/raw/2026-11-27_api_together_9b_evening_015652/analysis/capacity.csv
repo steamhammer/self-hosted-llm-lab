@@ -1,0 +1,3 @@
+scenario,pattern,capacity,output_tok_per_s,total_tok_per_s,usd_per_1m_output,usd_per_1m_total
+chat,concurrency,8.0,1148.8323343486948,3631.2818665181835,,
+rag,concurrency,8.0,883.1713810362035,13459.50242480217,,
