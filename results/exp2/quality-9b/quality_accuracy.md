@@ -1,0 +1,19 @@
+# Accuracy with 95% bootstrap intervals
+
+| run | set | n | accuracy | ci95 |
+|---|---|---|---|---|
+| 2026-11-27_eval_rtx4090_qwen3.5-9b.24gb_155322 | gsm8k_cot_llama | 1319 | 93.3 | 92.0–94.7 |
+| 2026-11-27_eval_rtx4090_qwen3.5-9b.24gb_155322 | ifeval | 541 | 83.5 | 80.4–86.7 |
+| 2026-11-27_eval_rtx4090_qwen3.5-9b.24gb_155322 | mmlu_pro | 1400 | 73.6 | 71.3–75.9 |
+| 2026-11-27_eval_rtx4090_qwen3.5-9b.24gb_155322 | mmlu_pro:quantitative | 400 | 77.0 | 72.8–81.0 |
+| 2026-11-27_eval_rtx4090_qwen3.5-9b.24gb_155322 | mmlu_pro:knowledge | 1000 | 72.3 | 69.5–75.0 |
+| 2026-11-27_api_darkbloom-fp4_9b | gsm8k_cot_llama | 1319 | 93.0 | 91.6–94.4 |
+| 2026-11-27_api_darkbloom-fp4_9b | ifeval | 541 | 81.9 | 78.6–85.0 |
+| 2026-11-27_api_darkbloom-fp4_9b | mmlu_pro | 1400 | 68.6 | 66.1–71.0 |
+| 2026-11-27_api_darkbloom-fp4_9b | mmlu_pro:quantitative | 400 | 68.8 | 64.2–73.2 |
+| 2026-11-27_api_darkbloom-fp4_9b | mmlu_pro:knowledge | 1000 | 68.5 | 65.7–71.4 |
+| 2026-11-27_api_together_9b | gsm8k_cot_llama | 1319 | 93.5 | 92.1–94.8 |
+| 2026-11-27_api_together_9b | ifeval | 541 | 82.4 | 79.3–85.6 |
+| 2026-11-27_api_together_9b | mmlu_pro | 1400 | 72.9 | 70.5–75.1 |
+| 2026-11-27_api_together_9b | mmlu_pro:quantitative | 400 | 76.2 | 72.0–80.5 |
+| 2026-11-27_api_together_9b | mmlu_pro:knowledge | 1000 | 71.5 | 68.7–74.3 |

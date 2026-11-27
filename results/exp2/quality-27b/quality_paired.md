@@ -1,0 +1,29 @@
+# Paired against 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949
+
+| run | vs | set | n_paired | diff_pp | ci95_pp | lost | gained | mcnemar_p | same_answer | same_text | median_divergence_char | prompt_mismatch |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.fp8_160929 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | gsm8k_cot_llama | 1319 | 0.2 | -0.2 to +0.6 | 3 | 5 | 0.7266 | 99% | 29% | 110 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.fp8_160929 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | ifeval | 541 | 1.1 | -0.7 to +3.0 | 10 | 16 | 0.3269 | 7% | 7% | 70 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.fp8_160929 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro | 1400 | -0.4 | -1.6 to +0.8 | 41 | 35 | 0.5666 | 92% | 2% | 152 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.fp8_160929 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:quantitative | 400 | -0.5 | -3.0 to +2.0 | 14 | 12 | 0.845 | 92% | 2% | 185 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.fp8_160929 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:knowledge | 1000 | -0.4 | -1.8 to +1.0 | 27 | 23 | 0.6718 | 92% | 2% | 138 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.int4_163030 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | gsm8k_cot_llama | 1319 | -0.2 | -0.8 to +0.5 | 12 | 10 | 0.8318 | 98% | 20% | 88 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.int4_163030 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | ifeval | 541 | 0.2 | -1.7 to +2.2 | 14 | 15 | 1.0 | 6% | 6% | 42 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.int4_163030 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro | 1400 | -0.5 | -1.7 to +0.7 | 42 | 35 | 0.4944 | 92% | 1% | 105 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.int4_163030 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:quantitative | 400 | -0.5 | -3.0 to +2.0 | 15 | 13 | 0.8506 | 92% | 1% | 134 | 0 |
+| 2026-11-27_eval_h100-80gb_qwen3.5-27b.int4_163030 | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:knowledge | 1000 | -0.5 | -1.9 to +0.9 | 27 | 22 | 0.5682 | 92% | 1% | 94 | 0 |
+| 2026-11-27_api_alibaba_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | gsm8k_cot_llama | 1319 | 0.5 | -0.1 to +1.2 | 6 | 13 | 0.1671 | 98% | 11% | 122 | 0 |
+| 2026-11-27_api_alibaba_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | ifeval | 541 | -0.7 | -2.8 to +1.3 | 19 | 15 | 0.6076 | 6% | 6% | 116 | 0 |
+| 2026-11-27_api_alibaba_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro | 1400 | -0.6 | -1.9 to +0.6 | 43 | 34 | 0.362 | 92% | 0% | 168 | 0 |
+| 2026-11-27_api_alibaba_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:quantitative | 400 | 0.8 | -1.5 to +3.0 | 10 | 13 | 0.6776 | 93% | 1% | 158 | 0 |
+| 2026-11-27_api_alibaba_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:knowledge | 1000 | -1.2 | -2.6 to +0.2 | 33 | 21 | 0.1337 | 92% | 0% | 171 | 0 |
+| 2026-11-27_api_deepinfra-fp8_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | gsm8k_cot_llama | 1319 | 0.2 | -0.2 to +0.7 | 3 | 6 | 0.5078 | 99% | 30% | 109 | 0 |
+| 2026-11-27_api_deepinfra-fp8_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | ifeval | 541 | 1.3 | -0.6 to +3.1 | 9 | 16 | 0.2295 | 8% | 8% | 77 | 0 |
+| 2026-11-27_api_deepinfra-fp8_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro | 1400 | 0.1 | -1.0 to +1.2 | 32 | 33 | 1.0 | 92% | 3% | 165 | 0 |
+| 2026-11-27_api_deepinfra-fp8_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:quantitative | 400 | 0.5 | -1.5 to +2.5 | 8 | 10 | 0.8145 | 94% | 4% | 210 | 0 |
+| 2026-11-27_api_deepinfra-fp8_27b | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:knowledge | 1000 | -0.1 | -1.4 to +1.2 | 24 | 23 | 1.0 | 92% | 2% | 152 | 0 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | gsm8k_cot_llama | 1319 | -0.5 | -1.3 to +0.4 | 19 | 13 | 0.3771 | 96% | 0% | 0 | 0 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | ifeval | 541 | 3.9 | +0.9 to +6.8 | 23 | 44 | 0.0139 | 1% | 1% | 3 | 0 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro | 1400 | 2.8 | +0.9 to +4.7 | 72 | 111 | 0.0048 | 81% | 0% | 0 | 0 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:quantitative | 400 | 5.5 | +2.5 to +8.8 | 10 | 32 | 0.0009 | 81% | 0% | 22 | 0 |
+| 2026-11-27_api_gemini-3.1-flash-lite_closed | 2026-11-27_eval_h100-80gb_qwen3.5-27b.bf16_154949 | mmlu_pro:knowledge | 1000 | 1.7 | -0.6 to +4.1 | 62 | 79 | 0.1776 | 81% | 0% | 0 | 0 |

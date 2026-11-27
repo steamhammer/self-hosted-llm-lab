@@ -1,0 +1,14 @@
+# Qwen3.5-27B, bf16. BF16 weights (~54 GB): one 80 GB card (A100 80GB, H100). The recipe's 1x H200 / 2x H100 is for the full 262k context; 8k fits one 80 GB card.
+#
+#   vllm serve --config serving/configs/qwen3.5-27b.bf16.yaml --port 8000
+#
+# Flag reference: https://docs.vllm.ai/en/latest/configuration/serve_args.html
+# Model recipe:   https://recipes.vllm.ai/Qwen/Qwen3.5-27B
+model: Qwen/Qwen3.5-27B
+language-model-only: true
+reasoning-parser: qwen3
+default-chat-template-kwargs: '{"enable_thinking": false}'
+max-model-len: 8192
+gpu-memory-utilization: 0.92
+max-num-seqs: 128
+seed: 0
